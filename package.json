@@ -1,0 +1,25 @@
+{
+  "name": "meridian-noir",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MERIDIAN NOIR — a scroll-directed site for a fictional maison de parfum.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 4173",
+    "preview:lan": "vite preview --port 4173 --host",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "gsap": "^3.13.0",
+    "lenis": "^1.3.11",
+    "three": "^0.185.1"
+  },
+  "devDependencies": {
+    "@types/three": "^0.185.4",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.5"
+  }
+}

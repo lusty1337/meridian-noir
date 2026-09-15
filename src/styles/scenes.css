@@ -1,0 +1,1044 @@
+.hero {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: clamp(22px, 3.2vh, 40px) var(--edge) clamp(56px, 8vh, 88px);
+  /* страница рисуется до самого верха экрана, а шапка - под строкой состояния */
+  padding-top: calc(clamp(22px, 3.2vh, 40px) + env(safe-area-inset-top));
+  overflow: hidden;
+}
+
+.hero > *:not(.hero__light) {
+  position: relative;
+  z-index: 1;
+}
+
+.hero__light {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  will-change: transform;
+}
+
+.hero__shade {
+  fill: var(--paper-shade);
+}
+
+.hero__bar {
+  fill: oklch(0.255 0.045 250 / 0.11);
+}
+
+.hero__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.hero__house {
+  font-size: var(--fs-small);
+  color: var(--ink-soft);
+}
+
+/* утверждение стоит первым в разметке, а колонками их разводит grid-column:
+   порядок чтения не должен зависеть от того, в какую сторону смотрит вёрстка */
+.hero__body {
+  display: grid;
+  grid-template-columns: var(--col-left) 1fr;
+  column-gap: var(--split-gap);
+  align-content: end;
+  padding-block: clamp(2rem, 6vh, 4rem);
+}
+
+.readings {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.hero__statement {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.readings {
+  align-self: end;
+  max-width: 30rem;
+}
+
+.readings__title {
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--hair-strong);
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.readings__list > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-block: 7px;
+  border-bottom: 1px solid var(--hair);
+}
+
+.readings dt {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.readings dd {
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.readings__key {
+  color: var(--madder-deep);
+  font-weight: 600;
+}
+
+.hero__statement {
+  display: grid;
+  align-content: end;
+  gap: clamp(1.2rem, 3vh, 2rem);
+}
+
+.display--hero .line {
+  display: block;
+  overflow: hidden;
+}
+
+.hero__foot {
+  font-size: var(--fs-small);
+  color: var(--ink-soft);
+  border-top: 1px solid var(--hair);
+  padding-top: 14px;
+}
+
+.index {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--shadow);
+  color: var(--chalk);
+  padding: var(--section-y) var(--edge);
+  display: grid;
+  grid-template-columns: var(--col-left) 1fr;
+  column-gap: var(--split-gap);
+  row-gap: clamp(2.5rem, 6vh, 4.5rem);
+}
+
+.index__arcs {
+  position: absolute;
+  inset: -14% 0;
+  z-index: -1;
+  will-change: transform;
+}
+
+.index__arcs svg {
+  width: 100%;
+  height: 100%;
+}
+
+.index__arcs path {
+  fill: none;
+  stroke: var(--chalk);
+  stroke-width: 1;
+  opacity: 0.13;
+}
+
+.index__head,
+.index__foot {
+  grid-column: 2;
+}
+
+.index__head .lead {
+  color: var(--chalk-soft);
+  margin-top: 0.9rem;
+}
+
+.index__foot {
+  font-size: var(--fs-small);
+  color: var(--chalk-soft);
+  max-width: 62ch;
+}
+
+.ledger {
+  grid-column: 1 / -1;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.ledger th,
+.ledger td {
+  text-align: left;
+  padding: 15px 1.4rem 15px 0;
+  vertical-align: baseline;
+}
+
+.ledger thead th {
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--chalk-soft);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--hair-chalk);
+}
+
+.ledger tbody tr {
+  border-bottom: 1px solid var(--hair-chalk);
+}
+
+.ledger tbody th[scope='row'] {
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 1.7vw, 1.55rem);
+  font-weight: 400;
+  letter-spacing: -0.012em;
+  transition: transform var(--dur-hover) var(--ease-out-quart);
+}
+
+.ledger__hour {
+  color: var(--madder-lit);
+  font-size: 1rem;
+}
+
+.ledger__glyph,
+.ledger__glyph-head {
+  width: 76px;
+  padding-right: 1rem;
+}
+
+.ledger__glyph svg {
+  width: 64px;
+  height: 30px;
+  overflow: visible;
+}
+
+.ledger__glyph .arc {
+  fill: none;
+  stroke: var(--chalk);
+  stroke-width: 1;
+  opacity: 0.42;
+}
+
+.ledger__glyph .dot {
+  fill: var(--shadow);
+  stroke: var(--madder-lit);
+  stroke-width: 1.4;
+  transition: fill var(--dur-hover) ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .index tbody tr:hover th[scope='row'] {
+    transform: translateX(6px);
+  }
+
+  .index tbody tr:hover .dot {
+    fill: var(--madder-lit);
+  }
+}
+
+.method {
+  padding: var(--section-y) var(--edge);
+  display: grid;
+  grid-template-columns: var(--col-left) 1fr;
+  column-gap: var(--split-gap);
+  row-gap: clamp(2.5rem, 6vh, 4rem);
+}
+
+.method__head,
+.skin {
+  grid-column: 2;
+}
+
+.method__head .lead {
+  margin-top: 0.9rem;
+}
+
+.formula {
+  grid-column: 1 / -1;
+  list-style: none;
+  padding: 0;
+}
+
+.formula__row {
+  display: grid;
+  grid-template-columns: var(--col-left) 1fr auto;
+  column-gap: var(--split-gap);
+  align-items: baseline;
+  border-top: 1px solid var(--hair);
+  padding-block: clamp(14px, 2.2vh, 22px);
+}
+
+.formula__name {
+  grid-column: 2;
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 1.7vw, 1.5rem);
+  line-height: 1.2;
+}
+
+.formula__name span {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-text);
+  font-size: var(--fs-small);
+  color: var(--ink-soft);
+}
+
+.formula__pct {
+  grid-column: 3;
+  font-size: clamp(1.05rem, 1.5vw, 1.35rem);
+  font-weight: 500;
+}
+
+.formula__pct i {
+  font-style: normal;
+  font-size: 0.68em;
+  color: var(--ink-soft);
+  margin-left: 2px;
+}
+
+.formula__note {
+  grid-column: 1;
+  grid-row: 1;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.95rem;
+  line-height: 1.42;
+  color: var(--ink-soft);
+  text-align: right;
+  max-width: 34ch;
+  justify-self: end;
+}
+
+.skin {
+  margin-top: clamp(1rem, 3vh, 2rem);
+}
+
+.skin__title {
+  font-family: var(--font-display);
+  font-size: var(--fs-h3);
+  font-weight: 400;
+  margin-bottom: 0.9rem;
+}
+
+.skin__track {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0;
+  max-width: 58ch;
+}
+
+.skin__track li {
+  display: grid;
+  grid-template-columns: 8.5rem 1fr;
+  gap: 1rem;
+  padding-block: 9px;
+  border-top: 1px solid var(--hair);
+}
+
+.skin__track span {
+  color: var(--madder-deep);
+  font-size: var(--fs-small);
+  letter-spacing: 0.04em;
+}
+
+.sweep__stage {
+  display: none;
+  position: relative;
+  /* большой вьюпорт, а не малый. на телефоне панели браузера прячутся при прокрутке,
+     и сцена в svh оставляла под собой бумажную полосу ровно их высоты - в ней было
+     видно, где кончается плита. lvh равен окну со спрятанными панелями, а когда они
+     показаны, низ сцены просто уходит под них */
+  height: 100lvh;
+  /* на детей не влияет - они в absolute от края. это канал для скрипта: так сцена
+     узнаёт высоту строки состояния и не ставит солнце под Dynamic Island */
+  padding-top: env(safe-area-inset-top);
+  background: var(--paper);
+  /* поле сцены уезжает от рассветного к полуденному, и текст HUD идёт прямо по нему.
+     0.19 - самая светлая тушь, которая держит 4.5:1 на самом тёмном из кадров */
+  --hud-ink: oklch(0.19 0.045 250);
+}
+
+.js .sweep__stage {
+  display: block;
+}
+
+/* пин держит браузер: сцена липнет к верху окна, пока секция не кончится. длина
+   секции и есть длина дня - четыре окна прокрутки поверх самой сцены. z-index нужен
+   флакону: на подлёте его холст выходит из сцены вверх, поверх предыдущей секции */
+@media (prefers-reduced-motion: no-preference) {
+  .js .sweep {
+    height: 500lvh;
+  }
+
+  .js .sweep__stage {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+}
+
+.sweep__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* тень флакона совпадает с двумерной плитой пиксель в пиксель: длинная тень
+   уходит далеко за габариты предмета, и холст у неё на весь кадр */
+.sweep__shade {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* сам флакон - маленький холст по коробке предмета. размер и сдвиг ему ставит
+   сцена, и сдвиг меняется только в полёте */
+.sweep__flacon {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* полёт на шкале самой секции: ноль - её верх на нижней кромке окна, сто - на верхней.
+   кадры пути пишет сцена, потому что они зависят от раскладки, а сдвигает холст браузер
+   в одном потоке с прокруткой. класс ставится, только когда кадры уже написаны */
+@supports (animation-timeline: view()) {
+  .sweep {
+    view-timeline: --sweep-entry block;
+  }
+
+  .sweep__flacon.is-flown {
+    animation: flacon-flight linear both;
+    animation-timeline: --sweep-entry;
+    animation-range: entry 0% entry 100%;
+  }
+}
+
+/* стрелки смены формулы. координаты им ставит сцена: середина флакона и отступ от
+   неё в обе стороны, в пикселях сцены - лежат они в ней и едут вместе с ней */
+.flacon-switch {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 420ms var(--ease-out-quart);
+}
+
+.flacon-switch.is-awake {
+  opacity: 1;
+}
+
+.flacon-switch__arrow {
+  position: absolute;
+  top: var(--cy, 50%);
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+  /* стрелки просыпаются вместе с контейнером, но каждая от своей стороны */
+  transition: transform 420ms var(--ease-out-quart), opacity 200ms linear;
+  opacity: 0.55;
+}
+
+.is-awake .flacon-switch__arrow {
+  pointer-events: auto;
+}
+
+.flacon-switch__arrow--prev {
+  left: calc(var(--cx, 50%) - var(--dx, 120px));
+  transform: translate(-50%, -50%) translateX(10px);
+}
+
+.flacon-switch__arrow--next {
+  left: calc(var(--cx, 50%) + var(--dx, 120px));
+  transform: translate(-50%, -50%) translateX(-10px);
+}
+
+.is-awake .flacon-switch__arrow--prev,
+.is-awake .flacon-switch__arrow--next {
+  transform: translate(-50%, -50%);
+}
+
+.flacon-switch__arrow svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.flacon-switch__arrow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  opacity: 0;
+  transform: scale(0.86);
+  transition: opacity var(--dur-hover) var(--ease-out-quart),
+    transform var(--dur-hover) var(--ease-out-quart);
+}
+
+.flacon-switch__arrow:hover,
+.flacon-switch__arrow:focus-visible {
+  opacity: 1;
+}
+
+.flacon-switch__arrow:hover::before,
+.flacon-switch__arrow:focus-visible::before {
+  opacity: 0.32;
+  transform: scale(1);
+}
+
+/* текст дня справа, за концом дуги. у меридиана он стоял посреди неба, и солнце
+   к полудню проходило ровно под цифрами часов */
+.sweep__hud {
+  position: absolute;
+  top: clamp(3rem, 8vh, 5.5rem);
+  right: calc(var(--edge) + env(safe-area-inset-right));
+  width: clamp(17rem, 26vw, 26rem);
+  color: var(--hud-ink);
+}
+
+.sweep__label {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.sweep__clock {
+  font-size: clamp(3rem, 5.4vw, 4.6rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  margin-block: 0.2rem 1.1rem;
+}
+
+.sweep__readout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 2.2rem;
+  border-top: 1px solid oklch(0.19 0.045 250 / 0.3);
+  padding-top: 0.7rem;
+}
+
+.sweep__readout dt {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.sweep__readout dd {
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.sweep__line {
+  margin-top: 1.4rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 1.5vw, 1.3rem);
+  line-height: 1.42;
+  max-width: 30ch;
+}
+
+.sweep__transcript {
+  padding: var(--section-y) var(--edge);
+  display: grid;
+  grid-template-columns: var(--col-left) 1fr;
+  column-gap: var(--split-gap);
+}
+
+.js .sweep__transcript {
+  display: none;
+}
+
+.sweep__transcript > * {
+  grid-column: 2;
+}
+
+.sweep__transcript .lead {
+  margin-top: 0.9rem;
+}
+
+.transcript {
+  list-style: none;
+  padding: 0;
+  margin-top: clamp(1.5rem, 4vh, 2.5rem);
+  max-width: 62ch;
+}
+
+.transcript li {
+  display: grid;
+  grid-template-columns: 5rem 1fr;
+  gap: 1rem;
+  padding-block: 10px;
+  border-top: 1px solid var(--hair);
+}
+
+.transcript span {
+  color: var(--madder-deep);
+  font-size: var(--fs-small);
+}
+
+.provenance {
+  position: relative;
+  padding: var(--section-y) var(--edge);
+  display: grid;
+  grid-template-columns: var(--col-left) 1fr;
+  column-gap: var(--split-gap);
+  background: var(--paper-deep);
+  overflow: hidden;
+}
+
+/* свет выходит за границы секции сверху и снизу: край секции должен читаться
+   как край света, а не как край блока */
+.provenance__light {
+  position: absolute;
+  left: 0;
+  top: -6rem;
+  bottom: -6rem;
+  width: calc(var(--meridian) + 2.5rem);
+  z-index: 0;
+  will-change: transform;
+}
+
+.provenance__light svg {
+  width: 100%;
+  height: 100%;
+}
+
+.provenance__light g {
+  fill: var(--shadow);
+}
+
+.provenance__copy {
+  grid-column: 2;
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 1.15rem;
+  max-width: 64ch;
+}
+
+.provenance__copy .display {
+  margin-bottom: 0.6rem;
+}
+
+.provenance__copy p {
+  line-height: 1.62;
+}
+
+.provenance__copy b {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.08em;
+  letter-spacing: -0.01em;
+}
+
+.provenance__close {
+  margin-top: 0.8rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--hair);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.08rem;
+  color: var(--ink-soft);
+}
+
+.acquisition {
+  padding: var(--section-y) var(--edge);
+  display: grid;
+  grid-template-columns: var(--col-left) 1fr;
+  column-gap: var(--split-gap);
+  row-gap: clamp(2.5rem, 6vh, 4rem);
+}
+
+.acquisition__head,
+.letter {
+  grid-column: 2;
+}
+
+.acquisition__head .lead {
+  margin-top: 0.9rem;
+}
+
+.ledger--prices thead th {
+  color: var(--ink-soft);
+  border-bottom-color: var(--hair);
+}
+
+.ledger--prices tbody tr {
+  border-bottom-color: var(--hair);
+}
+
+.ledger--prices {
+  grid-column: 2;
+  max-width: 46rem;
+  table-layout: fixed;
+}
+
+.ledger--prices tbody th[scope='row'] {
+  font-size: clamp(1.05rem, 1.5vw, 1.35rem);
+}
+
+.ledger--prices .num {
+  text-align: right;
+  width: 18%;
+}
+
+.letter {
+  max-width: 34rem;
+}
+
+.letter__title {
+  font-family: var(--font-display);
+  font-size: var(--fs-h3);
+  font-weight: 400;
+  margin-bottom: 0.9rem;
+}
+
+.letter__field {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  row-gap: 6px;
+}
+
+.letter__field label {
+  grid-column: 1 / -1;
+  font-size: var(--fs-micro);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.letter__field input {
+  min-width: 0;
+  border: 0;
+  border-bottom: 1px solid var(--hair-strong);
+  background: transparent;
+  padding: 12px 4px;
+}
+
+/* внутрь, а не наружу: со стандартным offset рамка вылезала ниже волосяной линии
+   поля и оказывалась выше кнопки рядом */
+.letter__field input:focus-visible {
+  outline-offset: -2px;
+}
+
+/* марена по марене неразличима - на залитой кнопке кольцо фокуса чернильное */
+.letter__field button:focus-visible {
+  outline-color: var(--ink);
+}
+
+.letter__field input::placeholder {
+  color: var(--ink-soft);
+}
+
+.letter__field button {
+  border: 0;
+  background: var(--madder-deep);
+  color: var(--paper);
+  padding: 12px 20px;
+  font-size: var(--fs-small);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-hover) ease,
+    transform var(--dur-tap) var(--ease-out-quart);
+}
+
+.letter__field button:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .letter__field button:hover {
+    background: var(--madder);
+  }
+}
+
+.letter__error,
+.letter__note {
+  margin-top: 0.7rem;
+  font-size: var(--fs-small);
+}
+
+.letter__error {
+  color: var(--madder-deep);
+  font-weight: 500;
+}
+
+.letter__error.is-ok {
+  color: var(--ink);
+  font-weight: 400;
+}
+
+.letter__note {
+  color: var(--ink-soft);
+}
+
+@media (max-width: 900px) {
+  .hero__body,
+  .index,
+  .method,
+  .formula__row,
+  .sweep__transcript,
+  .provenance,
+  .acquisition {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    padding-bottom: clamp(46px, 6.4vh, 72px);
+  }
+
+  .hero__body {
+    /* на 390 первый экран стал длиннее вместе с лидом, и нижняя строка уходила
+       за фолд - воздух между блоками режется, а не текст */
+    row-gap: clamp(1.25rem, 3vh, 2rem);
+    padding-block: clamp(1rem, 3vh, 2rem);
+  }
+
+  .readings,
+  .hero__statement {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .ledger--prices {
+    grid-column: 1;
+    max-width: none;
+  }
+
+  .index__head,
+  .index__foot,
+  .method__head,
+  .skin,
+  .acquisition__head,
+  .letter,
+  .provenance__copy,
+  .sweep__transcript > * {
+    grid-column: 1;
+  }
+
+  .formula__name,
+  .formula__pct,
+  .formula__note {
+    grid-column: 1;
+  }
+
+  .formula__row {
+    grid-template-columns: 1fr auto;
+  }
+
+  .formula__name {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .formula__pct {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .formula__note {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    text-align: left;
+    justify-self: start;
+    margin-top: 0.7rem;
+    padding-left: 0.9rem;
+    border-left: 1px solid var(--hair-madder);
+    max-width: none;
+  }
+
+  .provenance__light {
+    width: 100%;
+    opacity: 0.5;
+  }
+
+  .sweep__label {
+    font-size: 0.65rem;
+  }
+
+  .hero__top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    /* держим строки в стороне от кнопки Index, которая на этой ширине висит
+       в правом верхнем углу поверх шапки */
+    padding-right: 7rem;
+  }
+
+  .hero__foot {
+    font-size: 0.75rem;
+  }
+
+  .wordmark {
+    letter-spacing: 0.26em;
+  }
+
+  .ledger,
+  .ledger thead,
+  .ledger tbody,
+  .ledger tr,
+  .ledger th,
+  .ledger td {
+    display: block;
+  }
+
+  .ledger thead {
+    display: none;
+  }
+
+  .ledger tbody tr {
+    padding-block: 1.1rem;
+  }
+
+  .ledger th,
+  .ledger td {
+    padding: 2px 0;
+  }
+
+  .ledger td[data-label] {
+    display: grid;
+    grid-template-columns: 8.5rem 1fr;
+    gap: 1rem;
+  }
+
+  .ledger td[data-label]::before {
+    content: attr(data-label);
+    font-size: var(--fs-micro);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--chalk-soft);
+  }
+
+  .ledger--prices td[data-label]::before {
+    color: var(--ink-soft);
+  }
+
+  .ledger__glyph {
+    padding-top: 10px;
+  }
+
+  .skin__track li,
+  .transcript li {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+
+/* тот же запрос, что STACKED в sweep.ts. top ставит сцена: она меряет текст на самой
+   длинной строке дня и от его верха считает себя. строка покороче оставляет воздух
+   снизу, а не двигает часы вниз */
+@media (max-width: 900px) and (orientation: portrait) {
+  .sweep__hud {
+    left: var(--edge);
+    right: var(--edge);
+    top: var(--hud-top, auto);
+    /* сцена в lvh уходит под нижнюю панель, пока та показана: низ текста поднят ровно
+       на её высоту, иначе строки дня прятались бы под адресом */
+    bottom: calc(clamp(1.5rem, 4vh, 2.5rem) + max(100lvh - 100svh, env(safe-area-inset-bottom)));
+    width: auto;
+  }
+
+  .sweep__clock {
+    font-size: 2.3rem;
+    margin-block: 0.1rem 0.5rem;
+  }
+
+  .sweep__readout {
+    padding-top: 0.5rem;
+  }
+
+  .sweep__readout dd {
+    font-size: 1rem;
+  }
+
+  /* во всю ширину, а не в 30ch: каждая лишняя строка здесь отнята у флакона */
+  .sweep__line {
+    margin-top: 0.8rem;
+    font-size: 1rem;
+    max-width: none;
+  }
+}
+
+/* телефон боком: в правом верхнем углу висит кнопка Index, и текст встаёт под неё */
+@media (max-width: 900px) and (orientation: landscape) {
+  .sweep__hud {
+    top: calc(clamp(12px, 2vh, 18px) + env(safe-area-inset-top) + 3rem);
+    width: clamp(15rem, 34vw, 20rem);
+  }
+
+  .sweep__clock {
+    font-size: 2rem;
+    margin-block: 0.1rem 0.4rem;
+  }
+
+  .sweep__readout {
+    gap: 0 1.2rem;
+    padding-top: 0.4rem;
+  }
+
+  .sweep__readout dd {
+    font-size: 0.95rem;
+  }
+
+  .sweep__line {
+    margin-top: 0.6rem;
+    font-size: 0.95rem;
+    line-height: 1.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flacon-switch,
+  .flacon-switch__arrow,
+  .flacon-switch__arrow::before {
+    transition: none;
+  }
+
+  /* другой монтаж того же фильма: пик не пинится и не скрабится, но кадр остаётся,
+     а весь текст сцены возвращается на страницу целиком */
+  .js .sweep__transcript {
+    display: grid;
+  }
+
+  .sweep__stage {
+    height: 68svh;
+  }
+
+  .hero__light,
+  .index__arcs,
+  .provenance__light {
+    will-change: auto;
+  }
+}

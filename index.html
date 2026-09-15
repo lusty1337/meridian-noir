@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!-- cover: без него Safari обрезает страницу по строке состояния, и флакон на
+         подлёте пропадал на её кромке, а не за краем экрана -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>MERIDIAN NOIR — five formulas, five coordinates</title>
+    <meta
+      name="description"
+      content="MERIDIAN NOIR is a maison de parfum in Marseille. Five formulas, each fixed to one set of coordinates and to the minute of the cut in apparent solar time."
+    />
+    <meta name="theme-color" content="#e3ebef" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="MERIDIAN NOIR" />
+    <meta
+      property="og:description"
+      content="Five formulas, each fixed to one set of coordinates and to the minute of the cut."
+    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preload" href="/fonts/newsreader-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/schibsted-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <script>
+      // ставим флаг до первой отрисовки: сцена пика и её текстовая версия
+      // взаимоисключающие, и без флага одна из них успеет мигнуть
+      document.documentElement.classList.add('js')
+    </script>
+  </head>
+
+  <body>
+    <a class="skip" href="#hero">Skip to content</a>
+
+    <!-- заставка. без js её нет вовсе: тогда и ждать нечего -->
+    <div class="preloader" data-preloader role="status" aria-live="polite">
+      <p class="preloader__mark">Meridian Noir</p>
+      <p class="preloader__line" aria-hidden="true">
+        <i class="preloader__bar" data-preloader-bar></i>
+      </p>
+      <p class="preloader__note">Setting the plate</p>
+    </div>
+
+    <!-- линия меридиана и зерно бумаги живут поверх всего документа и не скроллятся -->
+    <div class="meridian" aria-hidden="true"><i class="meridian__ticks"></i></div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <button
+      class="index-toggle"
+      type="button"
+      aria-expanded="false"
+      aria-controls="index-panel"
+      data-index-open
+    >
+      <span class="index-toggle__rule" aria-hidden="true"></span>
+      <span class="index-toggle__label">Index</span>
+    </button>
+
+    <dialog class="index-panel" id="index-panel" aria-label="Index" data-index-panel>
+      <div class="index-panel__inner">
+        <p class="index-panel__label">Five formulas</p>
+        <nav class="index-panel__nav" aria-label="Formulas">
+          <a href="#index">Cypress <span>12:04</span></a>
+          <a href="#index">Halite <span>11:52</span></a>
+          <a href="#index">Vetiver <span>12:31</span></a>
+          <a href="#index">Hinoki <span>13:07</span></a>
+          <a href="#index">Orris <span>12:18</span></a>
+        </nav>
+        <p class="index-panel__label">The house</p>
+        <nav class="index-panel__nav index-panel__nav--sections" aria-label="Sections">
+          <a href="#index">The index</a>
+          <a href="#method">How one is built</a>
+          <a href="#sweep">The cut</a>
+          <a href="#provenance">Provenance</a>
+          <a href="#acquisition">Acquisition</a>
+        </nav>
+        <p class="index-panel__address">
+          14 rue Sainte, Marseille 13001<br />
+          Maison de parfum, founded 2016
+        </p>
+        <button class="index-panel__close" type="button" data-index-close>Close</button>
+      </div>
+    </dialog>
+
+    <main>
+      <section class="hero" id="hero">
+        <svg class="hero__light" viewBox="0 0 1440 900" preserveAspectRatio="none" aria-hidden="true" data-pointer-drift>
+          <!-- одно окно, одна плоскость стены. все четыре кромки параллельны, потому что
+               их отбрасывает один переплёт; края без растушёвки - мягкая тень читалась бы
+               как пасмурно, а сцена стоит на полудне -->
+          <polygon class="hero__shade" points="0,760 1440,350 1440,900 0,900" />
+          <polygon class="hero__shade" points="0,0 0,190 1440,-250 1440,0" />
+          <polygon class="hero__bar" points="0,430 1440,20 1440,35 0,445" />
+          <polygon class="hero__bar" points="0,300 1440,-110 1440,-82 0,328" />
+        </svg>
+
+        <header class="hero__top">
+          <p class="wordmark" translate="no">Meridian Noir</p>
+          <p class="hero__house">Maison de parfum · Marseille · since 2016</p>
+        </header>
+
+        <div class="hero__body">
+          <div class="hero__statement">
+            <h1 class="display display--hero" data-reveal-lines>
+              <span class="line">A perfume is a place</span>
+              <span class="line">held at one hour</span>
+              <span class="line">of one day.</span>
+            </h1>
+            <p class="lead" data-reveal>
+              MERIDIAN NOIR makes five perfumes. Each is built from material cut at one place, on one
+              day, at one fixed minute — the hour the plant gives up the most of what it has, and the
+              hour its shadow is shortest. That minute is the name on the bottle.
+            </p>
+          </div>
+
+          <div class="readings">
+            <p class="readings__title">Harvest record · Cypress 12:04</p>
+            <dl class="readings__list" data-reveal-stagger>
+              <div><dt>Latitude</dt><dd>43°17′14″&nbsp;N</dd></div>
+              <div><dt>Longitude</dt><dd>05°22′08″&nbsp;E</dd></div>
+              <div><dt>Altitude</dt><dd>12&nbsp;m</dd></div>
+              <div><dt>Solar transit</dt><dd>12:00</dd></div>
+              <div><dt>The cut</dt><dd class="readings__key">12:04</dd></div>
+              <div><dt>Air</dt><dd>31&nbsp;°C</dd></div>
+              <div><dt>Date</dt><dd>4 August</dd></div>
+            </dl>
+          </div>
+
+        </div>
+
+        <p class="hero__foot">
+          Five coordinates. Marseille · Uyuni · Grand Îlet · Ohara · San Polo
+        </p>
+      </section>
+
+      <section class="index" id="index" data-scene="index">
+        <div class="index__arcs" aria-hidden="true" data-depth="0.64">
+          <svg viewBox="0 0 1200 420" preserveAspectRatio="xMidYMid slice">
+            <path d="M0 420 Q 600 -140 1200 420" />
+            <path d="M0 420 Q 600 -40 1200 420" />
+            <path d="M0 420 Q 600 60 1200 420" />
+            <path d="M0 420 Q 600 150 1200 420" />
+            <path d="M0 420 Q 600 236 1200 420" />
+          </svg>
+        </div>
+
+        <div class="index__head" data-depth="0.82">
+          <hr class="rule" />
+          <h2 class="display">The index</h2>
+          <p class="lead">Five formulas, in the order they were fixed.</p>
+        </div>
+
+        <table class="ledger">
+          <caption class="visually-hidden">
+            The five MERIDIAN NOIR formulas with the hour of the cut, coordinates, place, air
+            temperature, dominant material and the year the formula was fixed.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Formula</th>
+              <th scope="col">The cut</th>
+              <th scope="col" class="ledger__glyph-head"><span class="visually-hidden">Sun path</span></th>
+              <th scope="col">Coordinates</th>
+              <th scope="col">Place</th>
+              <th scope="col" class="num">Air</th>
+              <th scope="col">Dominant material</th>
+              <th scope="col" class="num">Fixed</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row" data-label="Formula">Cypress</th>
+              <td data-label="The cut" class="num ledger__hour">12:04</td>
+              <td class="ledger__glyph"><svg viewBox="0 0 64 30" aria-hidden="true"><path class="arc" d="M2 28 Q 32 -6 62 28" /><circle class="dot" cx="32.29" cy="11.0" r="2.6" /></svg></td>
+              <td data-label="Coordinates" class="num">43°17′14″ N &nbsp; 05°22′08″&nbsp;E</td>
+              <td data-label="Place">Marseille, France</td>
+              <td data-label="Air" class="num">31&nbsp;°C</td>
+              <td data-label="Dominant">Cypress wood, sun-checked limestone</td>
+              <td data-label="Fixed" class="num">2016</td>
+            </tr>
+            <tr>
+              <th scope="row" data-label="Formula">Halite</th>
+              <td data-label="The cut" class="num ledger__hour">11:52</td>
+              <td class="ledger__glyph"><svg viewBox="0 0 64 30" aria-hidden="true"><path class="arc" d="M2 28 Q 32 3 62 28" /><circle class="dot" cx="31.43" cy="15.5" r="2.6" /></svg></td>
+              <td data-label="Coordinates" class="num">20°08′22″ S &nbsp; 67°29′41″&nbsp;W</td>
+              <td data-label="Place">Salar de Uyuni, Bolivia</td>
+              <td data-label="Air" class="num">17&nbsp;°C</td>
+              <td data-label="Dominant">Rock salt, borax, thin cold air</td>
+              <td data-label="Fixed" class="num">2018</td>
+            </tr>
+            <tr>
+              <th scope="row" data-label="Formula">Vetiver</th>
+              <td data-label="The cut" class="num ledger__hour">12:31</td>
+              <td class="ledger__glyph"><svg viewBox="0 0 64 30" aria-hidden="true"><path class="arc" d="M2 28 Q 32 -12 62 28" /><circle class="dot" cx="34.21" cy="8.11" r="2.6" /></svg></td>
+              <td data-label="Coordinates" class="num">21°06′55″ S &nbsp; 55°32′10″&nbsp;E</td>
+              <td data-label="Place">Grand Îlet, Réunion</td>
+              <td data-label="Air" class="num">27&nbsp;°C</td>
+              <td data-label="Dominant">Vetiver root, two years in ground</td>
+              <td data-label="Fixed" class="num">2019</td>
+            </tr>
+            <tr>
+              <th scope="row" data-label="Formula">Hinoki</th>
+              <td data-label="The cut" class="num ledger__hour">13:07</td>
+              <td class="ledger__glyph"><svg viewBox="0 0 64 30" aria-hidden="true"><path class="arc" d="M2 28 Q 32 9 62 28" /><circle class="dot" cx="36.79" cy="18.74" r="2.6" /></svg></td>
+              <td data-label="Coordinates" class="num">35°00′41″ N &nbsp; 135°46′03″&nbsp;E</td>
+              <td data-label="Place">Ohara, Kyoto</td>
+              <td data-label="Air" class="num">9&nbsp;°C</td>
+              <td data-label="Dominant">Hinoki heartwood, wet moss</td>
+              <td data-label="Fixed" class="num">2021</td>
+            </tr>
+            <tr>
+              <th scope="row" data-label="Formula">Orris</th>
+              <td data-label="The cut" class="num ledger__hour">12:18</td>
+              <td class="ledger__glyph"><svg viewBox="0 0 64 30" aria-hidden="true"><path class="arc" d="M2 28 Q 32 -7 62 28" /><circle class="dot" cx="33.29" cy="10.53" r="2.6" /></svg></td>
+              <td data-label="Coordinates" class="num">43°46′10″ N &nbsp; 11°15′28″&nbsp;E</td>
+              <td data-label="Place">San Polo, Florence</td>
+              <td data-label="Air" class="num">33&nbsp;°C</td>
+              <td data-label="Dominant">Orris butter, six years dried</td>
+              <td data-label="Fixed" class="num">2023</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p class="index__foot">
+          Hours are apparent solar time. Transit is 12:00 by definition; the number on the label is
+          the minute we cut. The arc is the sun’s path on the day of the harvest, and the mark is
+          where the cut falls on it.
+        </p>
+      </section>
+
+      <section class="method" id="method">
+        <div class="method__head">
+          <h2 class="display">How one of them is built</h2>
+          <p class="lead">Cypress 12:04. Seven lines, and the last one is alcohol.</p>
+        </div>
+
+        <ol class="formula">
+          <li class="formula__row" data-reveal-row>
+            <p class="formula__name">Cypress absolute<span>Cupressus sempervirens · Provence</span></p>
+            <p class="formula__pct num">18.0<i>%</i></p>
+            <p class="formula__note">
+              Distilled from wood cut in February, not from the needles. The needles give a cleaner,
+              thinner smell that is gone within the hour.
+            </p>
+          </li>
+          <li class="formula__row" data-reveal-row>
+            <p class="formula__name">Cistus labdanum<span>Resin · Andalusia</span></p>
+            <p class="formula__pct num">12.4<i>%</i></p>
+            <p class="formula__note">
+              Still combed off the fleeces of goats in one village. We buy the whole year’s yield and
+              have done since 2017.
+            </p>
+          </li>
+          <li class="formula__row" data-reveal-row>
+            <p class="formula__name">Sun-checked limestone<span>Accord · built in house</span></p>
+            <p class="formula__pct num">11.2<i>%</i></p>
+            <p class="formula__note">
+              There is no such material. It is three: a mineral aldehyde, a trace of gunflint, and
+              dry ambrette.
+            </p>
+          </li>
+          <li class="formula__row" data-reveal-row>
+            <p class="formula__name">Ambrette seed<span>CO₂ extract · Ecuador</span></p>
+            <p class="formula__pct num">9.0<i>%</i></p>
+          </li>
+          <li class="formula__row" data-reveal-row>
+            <p class="formula__name">Immortelle<span>Absolute · Corsica</span></p>
+            <p class="formula__pct num">6.5<i>%</i></p>
+            <p class="formula__note">
+              Six kilos of flower for ten grams of absolute. It is most of what the bottle costs.
+            </p>
+          </li>
+          <li class="formula__row" data-reveal-row>
+            <p class="formula__name">Pink peppercorn<span>CO₂ extract · Réunion</span></p>
+            <p class="formula__pct num">4.8<i>%</i></p>
+            <p class="formula__note">
+              Present for the first eleven minutes. After that it is not there, and it is not
+              supposed to be.
+            </p>
+          </li>
+          <li class="formula__row" data-reveal-row>
+            <p class="formula__name">Ethanol 96% and still water<span>Marseille</span></p>
+            <p class="formula__pct num">38.1<i>%</i></p>
+          </li>
+        </ol>
+
+        <div class="skin">
+          <h3 class="skin__title">On skin</h3>
+          <ol class="skin__track">
+            <li><span class="num">0–11 min</span> Pepper, and the salt off the water.</li>
+            <li><span class="num">11–90 min</span> Cypress wood. Stone that has been in the sun.</li>
+            <li><span class="num">90 min – 6 h</span> Immortelle and labdanum, warm, close to the skin.</li>
+            <li><span class="num">6 h onward</span> Ambrette, and a dry mineral trace that stays overnight.</li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- пик: солнечные часы. плиту рисует двумерный холст, флакон и его тень - два холста
+           поверх, а текст дня лежит в разметке, чтобы его читали и без картинки -->
+      <section class="sweep" id="sweep" data-scene="sweep" aria-label="The cut">
+        <div class="sweep__stage">
+          <canvas class="sweep__canvas" data-sweep-canvas role="img"
+            aria-label="A flacon standing on a ruled plate as the gnomon of a sundial; the sun crosses from dawn to dusk and the cast shadow swings and shortens."></canvas>
+
+          <!-- тень и сам флакон - два холста: тени хватает плотности экрана, а стеклу
+               и надписи нужна своя, вдвое выше, и только там, где они есть -->
+          <canvas class="sweep__shade" data-sweep-shade aria-hidden="true"></canvas>
+          <canvas class="sweep__flacon" data-sweep-flacon aria-hidden="true"></canvas>
+
+          <div class="sweep__hud">
+            <p class="sweep__label" data-sweep-place aria-live="polite">
+              Cypress 12:04 · 4 August · 43°17′14″ N · apparent solar time
+            </p>
+            <p class="sweep__clock num" data-sweep-clock>12:04</p>
+            <dl class="sweep__readout">
+              <div><dt>Altitude</dt><dd class="num" data-sweep-alt>63.7°</dd></div>
+              <div><dt>Shadow</dt><dd class="num" data-sweep-shadow>0.49 × h</dd></div>
+              <div><dt>Air</dt><dd class="num" data-sweep-air>31&nbsp;°C</dd></div>
+            </dl>
+            <p class="sweep__line" data-sweep-line>
+              Transit passed four minutes ago. Peak volatile fraction, and the shadow is as short as
+              it will be this year.
+            </p>
+          </div>
+          <div class="flacon-switch" data-flacon-switch>
+            <button
+              class="flacon-switch__arrow flacon-switch__arrow--prev"
+              type="button"
+              aria-controls="sweep"
+              data-flacon-prev
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 L7 12 L15 20" /></svg>
+              <span class="visually-hidden">Previous formula</span>
+            </button>
+            <button
+              class="flacon-switch__arrow flacon-switch__arrow--next"
+              type="button"
+              aria-controls="sweep"
+              data-flacon-next
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 L17 12 L9 20" /></svg>
+              <span class="visually-hidden">Next formula</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- полный текст сцены: он же no-JS версия и он же reduced-motion версия -->
+        <div class="sweep__transcript" data-sweep-transcript>
+          <h2 class="display">The cut</h2>
+          <p class="lead">
+            One day at 43°17′ N, from first light to last. The flacon stands on the plate as the
+            gnomon of a sundial, and the shadow does the reading.
+          </p>
+          <ol class="transcript">
+            <li><span class="num">05:00</span> First light. The stomata are shut. Nothing is leaving the plant.</li>
+            <li><span class="num">06:20</span> The resin is still hard. Nothing will move for another two hours.</li>
+            <li><span class="num">08:40</span> The shadow is halving every forty minutes.</li>
+            <li><span class="num">10:50</span> Warm enough to work on the terrace. Nothing is cut yet.</li>
+            <li><span class="num">12:00</span> Transit. The shadow is 0.49&nbsp;× height and will not get shorter this year.</li>
+            <li><span class="num">12:04</span> The cut.</li>
+            <li><span class="num">12:21</span> Twelve kilos of wood into the still, and the door shut behind it.</li>
+            <li><span class="num">15:10</span> The lighter fractions are already gone. What is left is the base.</li>
+            <li><span class="num">17:30</span> The stone gives back what it took.</li>
+            <li><span class="num">19:00</span> Everything after this hour belongs to a different formula.</li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="provenance" id="provenance">
+        <div class="provenance__light" aria-hidden="true" data-depth="0.72">
+          <svg viewBox="0 0 600 1400" preserveAspectRatio="xMidYMid slice" data-shutter></svg>
+        </div>
+
+        <div class="provenance__copy">
+          <h2 class="display">What it costs to be exact</h2>
+
+          <p>
+            <b>Orris.</b> Iris pallida rhizomes are lifted in the third year and then dried for six
+            more before they smell of anything at all. A thousand kilos of rhizome yield roughly one
+            kilo of butter. It is the most expensive material we buy, and Orris 12:18 carries 2.9% of
+            it, which is why that bottle costs what the other four do not.
+          </p>
+          <p>
+            <b>Immortelle.</b> Six kilos of flower, ten grams of absolute, and a four-day window in
+            early August when the heads are open and the stems have not yet gone woody. We take the
+            Corsican harvest whole or we take none of it.
+          </p>
+          <p>
+            <b>Labdanum.</b> One village in Andalusia still combs the resin off the fleeces of goats
+            that have walked through the cistus. We have bought that village’s entire yield every
+            year since 2017. There is no second supplier, and we have not looked for one.
+          </p>
+          <p>
+            <b>Vetiver.</b> Cut at two years in the ground rather than eighteen months. The extra six
+            months is where the smoke comes from; at eighteen months the root is green and the
+            formula reads like a different perfume.
+          </p>
+          <p class="provenance__close">
+            We distil on site. Nothing travels as raw material — the still goes to the field, and the
+            first fraction is in glass within the hour.
+          </p>
+        </div>
+      </section>
+
+      <section class="acquisition" id="acquisition">
+        <div class="acquisition__head">
+          <hr class="rule" />
+          <h2 class="display">The index is not sold in stores.</h2>
+          <p class="lead">
+            Each formula is bottled twice a year, in the week after its harvest. Sixty millilitres, a
+            hundred, and a nine-millilitre decant that exists because the hundred does not fit in
+            hand luggage.
+          </p>
+        </div>
+
+        <table class="ledger ledger--prices">
+          <caption class="visually-hidden">Prices by formula and bottle size, in euro.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Formula</th>
+              <th scope="col" class="num">9&nbsp;ml</th>
+              <th scope="col" class="num">60&nbsp;ml</th>
+              <th scope="col" class="num">100&nbsp;ml</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-reveal-row><th scope="row" data-label="Formula">Cypress 12:04</th><td data-label="9&nbsp;ml" class="num">€48</td><td data-label="60&nbsp;ml" class="num">€215</td><td data-label="100&nbsp;ml" class="num">€310</td></tr>
+            <tr data-reveal-row><th scope="row" data-label="Formula">Halite 11:52</th><td data-label="9&nbsp;ml" class="num">€52</td><td data-label="60&nbsp;ml" class="num">€235</td><td data-label="100&nbsp;ml" class="num">€340</td></tr>
+            <tr data-reveal-row><th scope="row" data-label="Formula">Vetiver 12:31</th><td data-label="9&nbsp;ml" class="num">€50</td><td data-label="60&nbsp;ml" class="num">€225</td><td data-label="100&nbsp;ml" class="num">€325</td></tr>
+            <tr data-reveal-row><th scope="row" data-label="Formula">Hinoki 13:07</th><td data-label="9&nbsp;ml" class="num">€56</td><td data-label="60&nbsp;ml" class="num">€255</td><td data-label="100&nbsp;ml" class="num">€370</td></tr>
+            <tr data-reveal-row><th scope="row" data-label="Formula">Orris 12:18</th><td data-label="9&nbsp;ml" class="num">€74</td><td data-label="60&nbsp;ml" class="num">€340</td><td data-label="100&nbsp;ml" class="num">€495</td></tr>
+          </tbody>
+        </table>
+
+        <form class="letter" data-letter novalidate>
+          <h3 class="letter__title">Write to the atelier</h3>
+          <div class="letter__field">
+            <label for="email">Your address</label>
+            <input id="email" name="email" type="email" inputmode="email" autocomplete="email"
+              placeholder="you@example.com" spellcheck="false" required
+              aria-describedby="letter-note" />
+            <button type="submit">Request the index</button>
+          </div>
+          <p class="letter__error" data-letter-error role="status" aria-live="polite" hidden></p>
+          <p class="letter__note" id="letter-note">
+            One letter, twice a year, in the week the stills run. Nothing else.
+          </p>
+        </form>
+      </section>
+    </main>
+
+    <footer class="colophon">
+      <p class="wordmark" translate="no">Meridian Noir</p>
+      <p>14 rue Sainte, Marseille 13001 · Maison de parfum, founded 2016</p>
+      <p class="colophon__note">
+        A fictional brand, built as a portfolio piece. The house, the formulas and the prices are
+        invented; the solar geometry is not.
+      </p>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

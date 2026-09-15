@@ -1,0 +1,159 @@
+@import '../styles/tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+.lab {
+  min-height: 100svh;
+  background: var(--paper-deep);
+  color: var(--ink);
+  font-family: var(--font-text);
+  font-size: var(--fs-small);
+  overflow: hidden;
+}
+
+.lab__stage {
+  position: fixed;
+  inset: 0;
+}
+
+.lab__stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.lab__head {
+  position: fixed;
+  top: 20px;
+  left: 22px;
+  pointer-events: none;
+}
+
+.lab__title {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  letter-spacing: -0.015em;
+}
+
+.lab__title span {
+  font-family: var(--font-text);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--madder-deep);
+  margin-left: 0.7rem;
+}
+
+.lab__hint {
+  margin-top: 4px;
+  color: var(--ink-soft);
+  font-size: var(--fs-micro);
+}
+
+.lab__panel {
+  position: fixed;
+  right: 22px;
+  bottom: 20px;
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px;
+  min-width: 15rem;
+  background: color-mix(in oklab, var(--paper) 88%, transparent);
+  border: 1px solid var(--hair-strong);
+}
+
+.lab__row {
+  display: grid;
+  gap: 5px;
+}
+
+.lab__row label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.lab__row input {
+  accent-color: var(--madder-deep);
+  width: 15px;
+  height: 15px;
+}
+
+.lab__views {
+  display: flex;
+  gap: 6px;
+}
+
+.lab__views button {
+  flex: 1;
+  padding: 7px 0;
+  background: transparent;
+  border: 1px solid var(--hair-strong);
+  color: var(--ink);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-hover) ease,
+    color var(--dur-hover) ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lab__views button:hover {
+    background: var(--ink);
+    color: var(--paper);
+  }
+}
+
+.lab__stats {
+  display: grid;
+  gap: 3px;
+  padding-top: 11px;
+  border-top: 1px solid var(--hair);
+}
+
+.lab__stats > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.lab__stats dt {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.lab__stats dd {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--madder-deep);
+  outline-offset: 3px;
+}
+
+@media (max-width: 720px) {
+  .lab__panel {
+    right: 14px;
+    left: 14px;
+    bottom: 14px;
+    min-width: 0;
+  }
+
+  .lab__row {
+    grid-template-columns: 1fr 1fr;
+  }
+}

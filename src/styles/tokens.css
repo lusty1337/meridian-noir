@@ -1,0 +1,117 @@
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('/fonts/newsreader-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Newsreader';
+  font-style: italic;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('/fonts/newsreader-latin-italic.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Schibsted Grotesk';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url('/fonts/schibsted-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Schibsted Grotesk';
+  font-style: italic;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url('/fonts/schibsted-latin-italic.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* цвет меридиана регистрируется как свойство, иначе его нечем анимировать:
+   он живёт внутри градиента, а невыясненная переменная переключается скачком */
+@property --hair-madder {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgb(197 35 39 / 0.45);
+}
+
+:root {
+  color-scheme: light;
+
+  --paper: oklch(0.935 0.01 230);
+  --paper-shade: oklch(0.8 0.022 236);
+  --paper-deep: oklch(0.898 0.013 230);
+  --shadow: oklch(0.285 0.058 250);
+
+  --ink: oklch(0.255 0.045 250);
+  --ink-soft: oklch(0.4 0.04 250);
+  --chalk: oklch(0.905 0.012 232);
+  --chalk-soft: oklch(0.73 0.03 235);
+
+  /* красный из корня марены. на бумаге он проходит по контрасту только в тёмном
+     варианте, на тёмном поле - только в светлом, поэтому оттенка три, а не один */
+  --madder: oklch(0.532 0.196 26);
+  --madder-deep: oklch(0.44 0.17 26);
+  --madder-lit: oklch(0.7 0.165 32);
+
+  --hair: oklch(0.255 0.045 250 / 0.16);
+  /* 0.52 и 0.45 - не на глаз: после наложения альфы граница элемента управления
+     обязана держать 3:1 к своему фону. на 0.38 выходило 2.23:1 */
+  --hair-strong: oklch(0.255 0.045 250 / 0.52);
+  --hair-chalk: oklch(0.905 0.012 232 / 0.2);
+  --hair-chalk-strong: oklch(0.905 0.012 232 / 0.45);
+  --hair-madder: oklch(0.532 0.196 26 / 0.45);
+
+  --font-display: 'Newsreader', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --font-text: 'Schibsted Grotesk', 'Helvetica Neue', Arial, sans-serif;
+
+  --fs-hero: clamp(2.55rem, 6.2vw, 5.6rem);
+  --fs-h2: clamp(1.95rem, 3.4vw, 3.1rem);
+  --fs-h3: clamp(1.15rem, 1.5vw, 1.4rem);
+  --fs-lead: clamp(1.02rem, 1.15vw, 1.22rem);
+  --fs-body: clamp(0.95rem, 0.92vw, 1rem);
+  --fs-small: 0.8125rem;
+  --fs-micro: 0.75rem;
+
+  /* с viewport-fit=cover телефон боком кладёт вырез экрана прямо на поле страницы */
+  --edge: max(clamp(20px, 4.2vw, 68px), env(safe-area-inset-left), env(safe-area-inset-right));
+  /* 38.2% - не эстетика, а рабочий якорь: на нём строится каждая секция,
+     и от него же считается ширина левой колонки */
+  --meridian: 38.2vw;
+  --split-gap: clamp(1.75rem, 3vw, 4rem);
+  --col-left: calc(var(--meridian) - var(--edge) - var(--split-gap) + 1.6rem);
+  --section-y: clamp(5rem, 11vh, 9.5rem);
+
+  --ease-out-quart: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-quart: cubic-bezier(0.77, 0, 0.175, 1);
+  --dur-tap: 140ms;
+  --dur-hover: 200ms;
+  --dur-panel: 320ms;
+  /* 900ms - это не UI-переход, а повествование: строка заголовка выезжает
+     ровно столько, сколько её читают. по таблице длительностей UI это был бы фейл */
+  --dur-reveal: 900ms;
+
+  --z-meridian: 30;
+  --z-grain: 35;
+  --z-toggle: 50;
+  --z-panel: 60;
+}
+
+@media (max-width: 900px) {
+  :root {
+    --meridian: calc(14px + env(safe-area-inset-left));
+    --col-left: 1fr;
+    --split-gap: 0px;
+  }
+}

@@ -1,0 +1,536 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  overflow-x: clip;
+  /* полоса прокрутки держит своё место всегда. заставка на время сборки закрывает
+     прокрутку совсем, и без этой строки полоса пропадала бы вместе с ней, двигая
+     всю раскладку на свою ширину - включая линию меридиана, которая идёт от вьюпорта */
+  scrollbar-gutter: stable;
+}
+
+/* нативный smooth только без js: с lenis они дерутся за один и тот же скролл */
+html:not(.js) {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-text);
+  font-size: var(--fs-body);
+  line-height: 1.55;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+img,
+svg,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+/* убирает задержку в 300 мс перед тапом и синий прямоугольник поверх нажатия:
+   у кнопок и ссылок здесь свои состояния, системная подсветка их только портит */
+a,
+button,
+input,
+summary {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--madder-deep);
+  outline-offset: 3px;
+}
+
+.index :focus-visible,
+.index-panel :focus-visible {
+  outline-color: var(--madder-lit);
+}
+
+.display {
+  font-family: var(--font-display);
+  font-weight: 380;
+  font-size: var(--fs-h2);
+  line-height: 1.06;
+  letter-spacing: -0.022em;
+  text-wrap: balance;
+}
+
+.display--hero {
+  font-size: var(--fs-hero);
+  font-weight: 340;
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+}
+
+.lead {
+  font-size: var(--fs-lead);
+  line-height: 1.5;
+  color: var(--ink-soft);
+  max-width: 44ch;
+  text-wrap: pretty;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  letter-spacing: 0.005em;
+}
+
+.rule {
+  border: 0;
+  border-top: 1px solid var(--hair);
+  margin-bottom: clamp(1.4rem, 3vh, 2.4rem);
+}
+
+.index .rule {
+  border-top-color: var(--hair-chalk);
+}
+
+.wordmark {
+  font-size: var(--fs-small);
+  font-weight: 500;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  padding: 12px 18px;
+  background: var(--ink);
+  color: var(--paper);
+  text-decoration: none;
+  transform: translateY(-120%);
+  transition: transform var(--dur-tap) var(--ease-out-quart);
+}
+
+.skip:focus-visible {
+  transform: translateY(0);
+}
+
+/* заставка. живёт только при js: без него ждать нечего, страница уже готова */
+.preloader {
+  display: none;
+}
+
+.js .preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 22px;
+  background: var(--paper);
+  transition: opacity 520ms var(--ease-out-quart), visibility 520ms;
+}
+
+.preloader.is-done {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.preloader__mark {
+  font-family: var(--font-display);
+  font-size: var(--fs-h3);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.42em;
+  /* трекинг раздвигает буквы вправо, и слово встаёт левее середины на один интервал */
+  text-indent: 0.42em;
+  color: var(--ink);
+}
+
+.preloader__line {
+  width: min(220px, 42vw);
+  height: 1px;
+  background: var(--paper-shade);
+  overflow: hidden;
+}
+
+.preloader__bar {
+  display: block;
+  height: 100%;
+  background: var(--madder);
+  /* линия растёт от левого края, поэтому масштабируется, а не меняет ширину:
+     ширина - это раскладка, масштаб - только композитор */
+  transform: scaleX(0.06);
+  transform-origin: left center;
+  transition: transform 620ms var(--ease-out-quart);
+}
+
+.preloader__note {
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--ink-soft);
+}
+
+/* пока считается заставка, страница стоит: lenis остановлен, а это - для всего
+   остального, от нативного скролла до пробела */
+.is-holding,
+.is-holding body {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js .preloader,
+  .preloader__bar {
+    transition: none;
+  }
+}
+
+.meridian {
+  position: fixed;
+  inset-block: 0;
+  left: var(--meridian);
+  width: 1px;
+  z-index: var(--z-meridian);
+  background: var(--hair-madder);
+  pointer-events: none;
+  /* 480 мс, а не 200: это не отклик на действие, а смена освещения под линией.
+     на быстрой смене возвращается ровно тот щелчок, ради которого всё затевалось */
+  transition: --hair-madder 480ms var(--ease-out-quart);
+}
+
+.meridian__ticks {
+  position: absolute;
+  inset-block: 0;
+  left: -3px;
+  width: 7px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--hair-madder) 0 1px,
+    transparent 1px 46px
+  );
+}
+
+/* пока в кадре тёмная секция, марена на ней почти не читается - осветляем линию и кнопку */
+.is-inverted .meridian,
+.is-inverted .meridian__ticks {
+  --hair-madder: oklch(0.7 0.165 32 / 0.55);
+}
+
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-grain);
+  pointer-events: none;
+  opacity: 0.055;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
+}
+
+.index-toggle {
+  position: fixed;
+  left: var(--edge);
+  bottom: calc(clamp(16px, 3vh, 30px) + env(safe-area-inset-bottom));
+  z-index: var(--z-toggle);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 18px;
+  background: var(--paper);
+  overflow: hidden;
+  border: 1px solid var(--hair-strong);
+  color: var(--ink);
+  font-size: var(--fs-small);
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-hover) ease,
+    border-color var(--dur-hover) ease,
+    color var(--dur-hover) ease;
+}
+
+.index-toggle__rule {
+  width: 22px;
+  height: 1px;
+  background: var(--madder);
+  transform-origin: left center;
+  transition:
+    scale var(--dur-hover) var(--ease-out-quart),
+    translate var(--dur-hover) var(--ease-out-quart),
+    background-color var(--dur-hover) ease;
+}
+
+.index-toggle__label {
+  /* разрядка встаёт и после последней буквы, и справа от X воздуха было больше, чем
+     слева от черты. минус та же разрядка возвращает кнопке симметрию */
+  margin-right: -0.2em;
+  transition: translate var(--dur-hover) var(--ease-out-quart);
+}
+
+.is-inverted .index-toggle {
+  background: var(--shadow);
+  border-color: var(--hair-chalk);
+  color: var(--chalk);
+}
+
+.is-inverted .index-toggle__rule {
+  background: var(--madder-lit);
+}
+
+.index-toggle:active {
+  scale: 0.97;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .index-toggle:hover {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+
+  /* черта растёт трансформом и подпись сама не толкает. поэтому 11 px прироста
+     делятся пополам: черта уходит влево, подпись вправо, и поля по краям остаются
+     равными. раньше подпись уезжала на все 12, и правое поле съёживалось */
+  .index-toggle:hover .index-toggle__rule {
+    translate: -5.5px 0;
+    scale: 1.5 1;
+    background: var(--madder-lit);
+  }
+
+  .index-toggle:hover .index-toggle__label {
+    translate: 5.5px 0;
+  }
+
+  .is-inverted .index-toggle:hover {
+    background: var(--chalk);
+    border-color: var(--chalk);
+    color: var(--shadow);
+  }
+
+  .is-inverted .index-toggle:hover .index-toggle__rule {
+    background: var(--madder-deep);
+  }
+}
+
+/* на узком экране контент прижат к левому краю, и кнопка внизу слева легла бы
+   ровно на текст - на мобильном она уходит в правый верхний угол */
+@media (max-width: 900px) {
+  .index-toggle {
+    left: auto;
+    right: calc(var(--edge) + env(safe-area-inset-right));
+    bottom: auto;
+    top: calc(clamp(12px, 2vh, 18px) + env(safe-area-inset-top));
+    padding: 7px 14px;
+  }
+
+  /* черта съедала 32 px ширины, и кнопка наезжала на строку с годом основания.
+     на узком экране она декоративна, а место, которое она занимала, - нет */
+  .index-toggle__rule {
+    display: none;
+  }
+
+  /* без черты сдвигать подпись не к чему - она ушла бы от середины */
+  .index-toggle:hover .index-toggle__label {
+    translate: none;
+  }
+}
+
+.index-panel {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  padding: 0;
+  border: 0;
+  background: var(--shadow);
+  color: var(--chalk);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  opacity: 0;
+  translate: 0 -2%;
+  /* discrete-переходы нужны потому, что закрытый <dialog> это display: none:
+     без allow-discrete и @starting-style он появлялся бы рывком */
+  transition:
+    opacity var(--dur-panel) var(--ease-out-quart),
+    translate var(--dur-panel) var(--ease-out-quart),
+    display var(--dur-panel) allow-discrete,
+    overlay var(--dur-panel) allow-discrete;
+}
+
+.index-panel[open] {
+  opacity: 1;
+  translate: none;
+}
+
+@starting-style {
+  .index-panel[open] {
+    opacity: 0;
+    translate: 0 -2%;
+  }
+}
+
+.index-panel::backdrop {
+  background: var(--shadow);
+}
+
+.index-panel__inner {
+  box-sizing: border-box;
+  min-height: 100%;
+  padding: clamp(2.5rem, 7vh, 4.5rem) var(--edge);
+  padding-top: calc(clamp(2.5rem, 7vh, 4.5rem) + env(safe-area-inset-top));
+  padding-bottom: calc(clamp(2.5rem, 7vh, 4.5rem) + env(safe-area-inset-bottom));
+  display: grid;
+  gap: clamp(0.6rem, 1.6vh, 1.1rem);
+  /* по центру, чтобы поле сверху равнялось полю снизу на любой высоте окна.
+     safe оставляет содержимое доступным, когда оно длиннее экрана и центрирование
+     срезало бы верх */
+  align-content: center;
+  align-content: safe center;
+}
+
+.index-panel__label:first-child {
+  margin-top: 0;
+}
+
+.index-panel__label {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--chalk-soft);
+  margin-top: clamp(1rem, 3vh, 2rem);
+}
+
+.index-panel__nav {
+  display: grid;
+  gap: 2px;
+}
+
+.index-panel__nav a {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 34rem;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--hair-chalk);
+  color: var(--chalk);
+  text-decoration: none;
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 3vw, 1.85rem);
+  font-weight: 360;
+  transition: color var(--dur-hover) ease;
+}
+
+.index-panel__nav a span {
+  font-family: var(--font-text);
+  font-size: var(--fs-small);
+  font-variant-numeric: tabular-nums;
+  color: var(--chalk-soft);
+}
+
+.index-panel__nav--sections a {
+  font-size: clamp(1rem, 1.8vw, 1.25rem);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .index-panel__nav a:hover {
+    color: var(--madder-lit);
+  }
+}
+
+.index-panel__address {
+  margin-top: clamp(1.5rem, 4vh, 3rem);
+  font-size: var(--fs-small);
+  color: var(--chalk-soft);
+}
+
+.index-panel__close {
+  justify-self: start;
+  margin-top: 1.25rem;
+  padding: 9px 18px;
+  background: transparent;
+  border: 1px solid var(--hair-chalk-strong);
+  color: var(--chalk);
+  font-size: var(--fs-small);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-hover) ease,
+    color var(--dur-hover) ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .index-panel__close:hover {
+    background: var(--chalk);
+    color: var(--shadow);
+  }
+}
+
+/* палец не попадает в цель меньше 44 px, а на мыши такая кнопка выглядела бы грузной -
+   поэтому высота добирается только там, где ввод касанием */
+@media (pointer: coarse) {
+  .index-toggle,
+  .index-panel__close,
+  .letter__field button {
+    min-height: 44px;
+  }
+
+  .index-panel__nav a {
+    padding-block: 11px;
+  }
+}
+
+.colophon {
+  padding: clamp(3rem, 8vh, 5rem) var(--edge) clamp(4.5rem, 10vh, 6rem);
+  border-top: 1px solid var(--hair);
+  display: grid;
+  gap: 0.4rem;
+  font-size: var(--fs-small);
+  color: var(--ink-soft);
+}
+
+.colophon .wordmark {
+  color: var(--ink);
+  margin-bottom: 0.6rem;
+}
+
+.colophon__note {
+  margin-top: 1.2rem;
+  max-width: 52ch;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.95rem;
+}

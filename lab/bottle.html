@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Flacon — model lab</title>
+    <meta name="theme-color" content="#e3ebef" />
+  </head>
+
+  <body class="lab">
+    <div class="lab__stage" data-stage>
+      <canvas
+        data-canvas
+        aria-label="The MERIDIAN NOIR flacon in three dimensions. Drag to turn it, scroll to zoom."
+      ></canvas>
+    </div>
+
+    <header class="lab__head">
+      <p class="lab__title">Flacon <span data-stage-label>stage 1 — silhouette</span></p>
+      <p class="lab__hint">Drag to turn · scroll to zoom · right-drag to pan · 1-5 for fixed views · R to reset</p>
+    </header>
+
+    <div class="lab__panel">
+      <div class="lab__row">
+        <label><input type="checkbox" data-toggle="wireframe" /> Wireframe</label>
+        <label><input type="checkbox" data-toggle="normals" /> Normals</label>
+        <label><input type="checkbox" data-toggle="ground" checked /> Ground</label>
+        <label><input type="checkbox" data-toggle="spin" /> Turntable</label>
+        <label><input type="checkbox" data-toggle="room" /> Room</label>
+        <label><input type="checkbox" data-toggle="clay" /> Clay</label>
+        <label><input type="checkbox" data-toggle="label" checked /> Label</label>
+      </div>
+      <div class="lab__views">
+        <button type="button" data-view="three-quarter">3/4</button>
+        <button type="button" data-view="front">Front</button>
+        <button type="button" data-view="side">Side</button>
+        <button type="button" data-view="top">Top</button>
+        <button type="button" data-view="bottom">Under</button>
+        <button type="button" data-nudge>Nudge</button>
+      </div>
+      <dl class="lab__stats">
+        <div><dt>Triangles</dt><dd data-stat="tris">—</dd></div>
+        <div><dt>Draw calls</dt><dd data-stat="calls">—</dd></div>
+        <div><dt>FPS</dt><dd data-stat="fps">—</dd></div>
+        <div><dt>Height</dt><dd data-stat="size">—</dd></div>
+      </dl>
+    </div>
+
+    <script type="module" src="/src/lab/bottle.ts"></script>
+  </body>
+</html>
