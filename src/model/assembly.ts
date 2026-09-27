@@ -13,7 +13,7 @@ import {
 import { createCollarMetal, createGlass } from './glass'
 import { createTint, HOUSE_TINT, type FlaconTint, type TintRecipe } from './tint'
 import { buildLabel } from './label'
-import { createLiquid, type LiquidMotion } from './liquid'
+import { createLiquid, type LiquidMotion, type LiquidStrata } from './liquid'
 import {
   buildDipTube,
   buildNozzle,
@@ -58,6 +58,8 @@ export type FlaconAssembly = {
   /** полутени стекла - стенду они нужны отдельно, чтобы гасить их на глине */
   shadows: { body: MeshDepthMaterial; cap: MeshDepthMaterial; parts: MeshDepthMaterial }
   motion: LiquidMotion
+  /** слои формулы в настое - их включает только сцена, где флакон разбирают */
+  strata: LiquidStrata
   /**
    * цвет флакона. четыре объекта Color, на которые смотрят юниформы стекла, трубки
    * и настоя: перекрасить формулу - это записать в них другие числа
@@ -79,19 +81,70 @@ export type AssemblyOptions = {
   formula?: string
 }
 
+type Parts = {
+  body: BufferGeometry
+  cap: BufferGeometry
+  collar: BufferGeometry
+  liquid: BufferGeometry
+  pump: BufferGeometry
+  nozzle: BufferGeometry
+  tube: BufferGeometry
+  users: number
+}
+
+/**
+ * геометрия одна на все флаконы одной формы. их на странице восемь, и у каждого была
+ * своя копия тех же вершин: восемь раз собрать на старте, восемь раз залить в видеопамять.
+ * цвет, формула и разборка живут в материалах и в положении деталей, а форма у всех общая.
+ * счёт владельцев - чтобы dispose одного флакона не выдернул буферы из-под остальных
+ */
+const shared = new WeakMap<FlaconOptions, Parts>()
+
+function takeParts(options: FlaconOptions): Parts {
+  let parts = shared.get(options)
+  if (!parts) {
+    parts = {
+      body: buildFlaconBody(options),
+      cap: buildFlaconCap(options),
+      collar: buildFlaconCollar(options),
+      liquid: buildFlaconLiquid(options),
+      pump: buildPump(options),
+      nozzle: buildNozzle(options),
+      tube: buildDipTube(options).geometry,
+      users: 0,
+    }
+    shared.set(options, parts)
+  }
+  parts.users += 1
+  return parts
+}
+
+function dropParts(options: FlaconOptions): void {
+  const parts = shared.get(options)
+  if (!parts) return
+  parts.users -= 1
+  if (parts.users > 0) return
+  for (const g of [parts.body, parts.cap, parts.collar, parts.liquid, parts.pump, parts.nozzle, parts.tube]) {
+    g.dispose()
+  }
+  shared.delete(options)
+}
+
 export function buildFlaconAssembly({
   shape: options = FLACON,
   recipe = HOUSE_TINT,
   formula = 'Cypress 12:04',
 }: AssemblyOptions = {}): FlaconAssembly {
   const tint = createTint(recipe)
-  const bodyGeometry = buildFlaconBody(options)
-  const capGeometry = buildFlaconCap(options)
-  const collarGeometry = buildFlaconCollar(options)
-  const liquidGeometry = buildFlaconLiquid(options)
-  const pumpGeometry = buildPump(options)
-  const nozzleGeometry = buildNozzle(options)
-  const tube = buildDipTube(options)
+  const parts = takeParts(options)
+  const {
+    body: bodyGeometry,
+    cap: capGeometry,
+    collar: collarGeometry,
+    liquid: liquidGeometry,
+    pump: pumpGeometry,
+    nozzle: nozzleGeometry,
+  } = parts
 
   const glass = createGlass({ height: options.height, tint })
   // крышка полирована сильнее корпуса: у настоящего флакона она из литого стекла,
@@ -101,7 +154,7 @@ export function buildFlaconAssembly({
   const plastic = createPumpPlastic()
   const nozzleMaterial = createNozzleMaterial()
   const tubeMaterial = createDipTubeMaterial(options.height, tint)
-  const { material: liquidMaterial, motion } = createLiquid(LIQUID_FILL * options.height, tint)
+  const { material: liquidMaterial, motion, strata } = createLiquid(LIQUID_FILL * options.height, tint)
 
   const body: Physical = new Mesh(bodyGeometry, glass)
   const cap: Physical = new Mesh(capGeometry, capGlass)
@@ -109,7 +162,7 @@ export function buildFlaconAssembly({
   const liquid: Physical = new Mesh(liquidGeometry, liquidMaterial)
   const pump: Physical = new Mesh(pumpGeometry, plastic)
   const nozzle: Physical = new Mesh(nozzleGeometry, nozzleMaterial)
-  const tubeMesh: Physical = new Mesh(tube.geometry, tubeMaterial)
+  const tubeMesh: Physical = new Mesh(parts.tube, tubeMaterial)
   for (const m of [body, cap, collar, liquid, pump]) m.castShadow = true
 
   /**
@@ -149,10 +202,8 @@ export function buildFlaconAssembly({
     liquidGeometry,
     pumpGeometry,
     nozzleGeometry,
-    tube.geometry,
+    parts.tube,
   ]
-  // трубка и сопло приходят из примитивов three и лежат с индексом, остальное собрано
-  // вручную и идёт списком вершин - считать одинаково нельзя
   const triangles =
     geometries.reduce((sum, g) => sum + (g.index?.count ?? g.getAttribute('position').count), 0) / 3
 
@@ -173,13 +224,14 @@ export function buildFlaconAssembly({
     },
     shadows: { body: bodyShadow, cap: capShadow, parts: partsShadow },
     motion,
+    strata,
     tint,
     write: label.write,
     labelReady: label.ready,
     triangles,
     size,
     dispose() {
-      for (const g of geometries) g.dispose()
+      dropParts(options)
       label.mesh.geometry.dispose()
       ;(label.mesh.material as Material).dispose()
       for (const m of [

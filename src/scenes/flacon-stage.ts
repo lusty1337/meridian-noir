@@ -18,7 +18,9 @@ import {
 } from 'three'
 
 import { isCoarsePointer } from '../lib/motion'
+import { onLowPower } from '../lib/quality'
 import { buildFlaconAssembly } from '../model/assembly'
+import { halveShadow } from '../model/shadow'
 import { buildStudio, type Studio } from '../model/studio'
 import type { FlaconTint, TintRecipe } from '../model/tint'
 
@@ -239,7 +241,13 @@ export function createFlaconStage(
    * экран и так втрое плотнее, а фрост матового стекла разницы не показывает
    */
   glass.setPixelRatio(coarse ? Math.min(devicePixelRatio, 2) : clamp(devicePixelRatio, 2, 2.5))
-  glass.transmissionResolutionScale = coarse ? 0.75 : 1
+  /**
+   * просвет считается в полный размер холста и на телефоне тоже. в три четверти тексель
+   * буфера приходился примерно на четыре точки экрана, и кромка зеркала настоя внутри
+   * стекла поднималась ступенями: снаружи силуэт сглаживает MSAA, а преломлённую
+   * картинку внутри - нет
+   */
+  glass.transmissionResolutionScale = 1
   shade.setPixelRatio(coarse ? Math.min(devicePixelRatio, 1.25) : 1)
 
   for (const renderer of [glass, shade]) {
@@ -290,6 +298,24 @@ export function createFlaconStage(
    */
   glassScene.environmentIntensity = 0.5
 
+  /**
+   * телефон отбирает контекст, когда вкладка долго лежит в фоне или кончается память. three
+   * сам просит его обратно и заново заводит программы и буферы, но комната снята в текстуру
+   * на видеокарте и пропадает вместе с ней - стекло вернулось бы тёмным. поэтому комната
+   * снимается заново, а флакон и тень рисуются, даже если с тех пор ничего не сдвинулось
+   */
+  let lost = false
+  canvases.flacon.addEventListener('webglcontextrestored', () => {
+    // старую комнату не освобождаем: её буферы ушли вместе с тем контекстом
+    studio = buildStudio(glass)
+    glassScene.environment = studio.environment
+    lost = true
+  })
+  canvases.shade.addEventListener('webglcontextrestored', () => {
+    shadeDrawn = true
+    lost = true
+  })
+
   // солнц два, по одному на холст, и оба смотрят одинаково: одно светит на стекло,
   // другое кладёт тень. переносить один источник между сценами three не умеет
   const light = new DirectionalLight(0xfff4e6, 1.5)
@@ -305,6 +331,7 @@ export function createFlaconStage(
   sun.shadow.bias = 0
   sun.shadow.normalBias = 0.004
   sun.shadow.blurSamples = coarse ? 8 : 16
+  onLowPower(() => halveShadow(sun.shadow))
   shadeScene.add(sun)
 
   /**
@@ -567,6 +594,10 @@ export function createFlaconStage(
     restless() {
       // парение не затухает никогда, поэтому поднятый флакон считается движущимся
       // всегда, а опущенный - только пока пружины доезжают
+      if (lost) {
+        lost = false
+        return true
+      }
       return hovering || ![lift, swing, nod, turn].every(asleep)
     },
 

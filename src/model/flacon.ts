@@ -40,6 +40,12 @@ export const FLACON: FlaconOptions = {
   density: 0.3,
 }
 
+/**
+ * насколько хорда скругления может отойти от дуги, в долях высоты. на самом крупном плане
+ * флакон ростом в девятьсот пикселей, и это четверть пикселя - на глаз дуга
+ */
+export const ARC_TOLERANCE = 0.00025
+
 const BODY_TOP = 0.62
 const SHOULDER_TOP = 0.735
 const NECK_TOP = 0.8
@@ -127,9 +133,13 @@ const INNER_WALL = 0.945
  * профиль настоя. дно повторяет купол донной выемки наоборот: внутри флакона он торчит
  * вверх, и жидкость собирается кольцом вокруг него - у настоящего флакона это видно.
  *
- * последние три точки - мениск. у стекла жидкость поднимается выше, чем в середине:
- * она его смачивает. без этой ступеньки уровень читается нарисованной полосой,
- * а не поверхностью
+ * мениск - подъём у стенки: у стекла жидкость стоит выше, чем в середине, она его
+ * смачивает. без этой ступеньки уровень читается нарисованной полосой, а не поверхностью.
+ *
+ * само зеркало плоское и разбито на кольца. пока оно шло к оси пологим конусом, веер от
+ * прямоугольного обода складывался в четыре плоских треугольника, и сквозь стекло поверхность
+ * читалась вогнутой пирамидой. кольца нужны волне и наклону: они считаются по вершинам,
+ * и на четырёх гранях рябь шла бы складками по диагоналям
  */
 const LIQUID_PROFILE: Array<[number, number, number]> = [
   [0, 0.078, 0],
@@ -138,7 +148,10 @@ const LIQUID_PROFILE: Array<[number, number, number]> = [
   [INNER_WALL, 0.03, 0.012],
   [INNER_WALL, FILL_LEVEL + 0.007, 0.003],
   [0.895, FILL_LEVEL, 0.014],
-  [0, FILL_LEVEL - 0.005, 0],
+  [0.68, FILL_LEVEL, 0],
+  [0.46, FILL_LEVEL, 0],
+  [0.24, FILL_LEVEL, 0],
+  [0, FILL_LEVEL, 0],
 ]
 
 /**
@@ -185,6 +198,11 @@ export function buildFlaconBody(options: FlaconOptions = FLACON): BufferGeometry
 export const LIQUID_FILL = FILL_LEVEL
 
 export function buildFlaconLiquid(options: FlaconOptions = FLACON): BufferGeometry {
+  /**
+   * у настоя сечение с теми же добитыми точками, что у корпуса, хотя грани плоские. само
+   * зеркало не плоское: рябь и наклон нормали считаются по вершинам, и на грани из двух
+   * точек волна шла бы по ней прямой складкой. втрое гуще не нужно - кадр тот же до пикселя
+   */
   const section = bodySection(options)
   const bodyAspect = options.halfDepth / options.halfWidth
 
@@ -230,11 +248,9 @@ export function buildFlaconCollar(options: FlaconOptions = FLACON): BufferGeomet
 export function buildFlaconCap(options: FlaconOptions = FLACON): BufferGeometry {
   const capW = options.halfWidth * CAP_SCALE
   const capD = options.halfDepth * CAP_SCALE
+  // у крышки грани плоские от юбки до макушки, и добивать их точками незачем - как у настоя
   const section = normalise(
-    subdivideLong(
-      chamferedSection(capW, capD, options.chamfer * CAP_SCALE, options.fillet * CAP_SCALE, 2),
-      capW * options.density,
-    ),
+    chamferedSection(capW, capD, options.chamfer * CAP_SCALE, options.fillet * CAP_SCALE, 2),
     capW,
     capD,
   )
@@ -265,6 +281,7 @@ function loft(
     profile.map(([r, y]) => ({ x: r, y: y * options.height })),
     profile.map(([, , radius]) => radius * options.height),
     5,
+    arcTolerance(profile, options.height),
   )
 
   // порядок обхода контура и есть порядок колец. сортировать по высоте нельзя:
@@ -286,44 +303,65 @@ function loft(
     }))
   })
 
+  /**
+   * вершина кольца одна на все четыре квадрата вокруг неё: нормаль у неё и так общая,
+   * снятая с поверхности, поэтому индекс не меняет ни одной точки на экране. а вершинный
+   * шейдер стекла считается впятеро реже - списком каждая точка шла через него шесть раз
+   */
   const normals = loftNormals(loops)
+  const n = section.length
   const positions: number[] = []
   const normalOut: number[] = []
-  const n = section.length
+  loops.forEach((loop, i) => loop.forEach((p, k) => push(positions, normalOut, p, normals[i][k])))
 
+  const index: number[] = []
   for (let i = 0; i < loops.length - 1; i += 1) {
     for (let k = 0; k < n; k += 1) {
       const k2 = (k + 1) % n
-      quad(
-        positions,
-        normalOut,
-        loops[i][k],
-        loops[i + 1][k],
-        loops[i + 1][k2],
-        loops[i][k2],
-        normals[i][k],
-        normals[i + 1][k],
-        normals[i + 1][k2],
-        normals[i][k2],
-      )
+      const a = i * n + k
+      const b = (i + 1) * n + k
+      const c = (i + 1) * n + k2
+      const d = i * n + k2
+      index.push(a, b, c, a, c, d)
     }
   }
 
-  cap(positions, normalOut, loops[0], normals[0], { x: 0, y: -1, z: 0 }, false)
-  cap(
-    positions,
-    normalOut,
-    loops[loops.length - 1],
-    normals[normals.length - 1],
-    { x: 0, y: 1, z: 0 },
-    true,
-  )
+  // по ободу крышки на оси берётся та же вершина кольца: нормаль там и была кольцевой,
+  // иначе по краю крышки шла бы жёсткая ступень там, где на стекле её нет
+  const fan = (ring: number, y: number, axis: Vec3, flip: boolean): void => {
+    const centre = positions.length / 3
+    push(positions, normalOut, { x: 0, y, z: 0 }, axis)
+    for (let k = 0; k < n; k += 1) {
+      const a = ring * n + k
+      const b = ring * n + ((k + 1) % n)
+      if (flip) index.push(centre, b, a)
+      else index.push(centre, a, b)
+    }
+  }
+  fan(0, loops[0][0].y, { x: 0, y: -1, z: 0 }, false)
+  fan(loops.length - 1, loops[loops.length - 1][0].y, { x: 0, y: 1, z: 0 }, true)
 
   const geometry = new BufferGeometry()
   geometry.setAttribute('position', new BufferAttribute(new Float32Array(positions), 3))
   geometry.setAttribute('normal', new BufferAttribute(new Float32Array(normalOut), 3))
+  geometry.setIndex(index)
   geometry.computeBoundingSphere()
   return geometry
+}
+
+/**
+ * допуск на каждый угол профиля. угол, от которого профиль уходит на плоский торец - к оси
+ * или вдоль той же высоты, - оставлен с полным шагом: нормаль крайнего кольца снимается с
+ * соседнего. реже кольца - сильнее она заваливается, и на плоской макушке крышки и на
+ * зеркале настоя проступал косой крест из бликов
+ */
+export function arcTolerance(profile: Array<[number, number, number]>, height: number): number[] {
+  return profile.map((p, i) => {
+    const prev = profile[(i - 1 + profile.length) % profile.length]
+    const next = profile[(i + 1) % profile.length]
+    const flat = (q: [number, number, number]): boolean => q[0] <= 1e-4 || Math.abs(q[1] - p[1]) < 1e-6
+    return flat(prev) || flat(next) ? 0 : ARC_TOLERANCE * height
+  })
 }
 
 /**
@@ -351,50 +389,6 @@ function bodySection(options: FlaconOptions): Vec2[] {
 
 function normalise(points: Vec2[], halfW: number, halfD: number): Vec2[] {
   return points.map((p) => ({ x: p.x / halfW, y: p.y / halfD }))
-}
-
-function quad(
-  pos: number[],
-  nor: number[],
-  a: Vec3,
-  b: Vec3,
-  c: Vec3,
-  d: Vec3,
-  na: Vec3,
-  nb: Vec3,
-  nc: Vec3,
-  nd: Vec3,
-): void {
-  push(pos, nor, a, na)
-  push(pos, nor, b, nb)
-  push(pos, nor, c, nc)
-  push(pos, nor, a, na)
-  push(pos, nor, c, nc)
-  push(pos, nor, d, nd)
-}
-
-function cap(
-  pos: number[],
-  nor: number[],
-  ring: Vec3[],
-  ringNormals: Vec3[],
-  axis: Vec3,
-  flip: boolean,
-): void {
-  const centre: Vec3 = { x: 0, y: ring[0].y, z: 0 }
-  for (let k = 0; k < ring.length; k += 1) {
-    const k2 = (k + 1) % ring.length
-    // по ободу берём нормаль кольца, а не осевую: иначе по краю крышки идёт
-    // жёсткая ступень там, где на стекле её нет
-    push(pos, nor, centre, axis)
-    if (flip) {
-      push(pos, nor, ring[k2], ringNormals[k2])
-      push(pos, nor, ring[k], ringNormals[k])
-    } else {
-      push(pos, nor, ring[k], ringNormals[k])
-      push(pos, nor, ring[k2], ringNormals[k2])
-    }
-  }
 }
 
 function push(pos: number[], nor: number[], p: Vec3, n: Vec3): void {
@@ -429,4 +423,88 @@ function smoothstep(edge0: number, edge1: number, x: number): number {
 
 function clamp01(v: number): number {
   return Math.min(1, Math.max(0, v))
+}
+
+export type FlaconOutline = { body: number[]; cap: number[]; collar: number[] }
+
+/**
+ * контур наружных граней для чертежа: отрезки парами точек, в тех же осях, что и меши.
+ * рёбра поверхности тут не годятся - у протяжки их сотни, и порог по углу между гранями
+ * выдавал обрывки колец по скруглениям вместо чертежа. здесь только то, что чертил бы
+ * человек: восемь рёбер огранки, кольца дна и плеча, дуги плеча к горлышку, горлышко,
+ * кольцо и крышку
+ */
+export function buildFlaconOutline(options: FlaconOptions = FLACON): FlaconOutline {
+  const h = options.height
+  const corners = (hw: number, hd: number, c: number): Vec2[] => [
+    { x: hw - c, y: hd },
+    { x: -(hw - c), y: hd },
+    { x: -hw, y: hd - c },
+    { x: -hw, y: -(hd - c) },
+    { x: -(hw - c), y: -hd },
+    { x: hw - c, y: -hd },
+    { x: hw, y: -(hd - c) },
+    { x: hw, y: hd - c },
+  ]
+  const ring = (out: number[], points: Vec2[], y: number, scale = 1): void => {
+    points.forEach((p, i) => {
+      const q = points[(i + 1) % points.length]
+      out.push(p.x * scale, y, p.y * scale, q.x * scale, y, q.y * scale)
+    })
+  }
+  const circle = (r: number, steps = 32): Vec2[] =>
+    Array.from({ length: steps }, (_, i) => {
+      const a = (Math.PI * 2 * i) / steps
+      return { x: Math.cos(a) * r, y: Math.sin(a) * r }
+    })
+
+  const body: number[] = []
+  const section = corners(options.halfWidth, options.halfDepth, options.chamfer)
+  const floor = 0.012 * h
+  const wall = BODY_TOP * h
+  ring(body, section, floor)
+  ring(body, section, wall)
+  for (const p of section) body.push(p.x, floor, p.y, p.x, wall, p.y)
+
+  // плечо: от угла огранки к горлышку по той же кривой, что у протяжки
+  const neck = options.halfWidth * NECK_RADIUS
+  const curve = shoulderCurve(10)
+  for (const p of section) {
+    const reach = Math.hypot(p.x, p.y)
+    let last: Vec3 | null = null
+    for (const [r, y] of curve) {
+      const t = (1 - r) / (1 - NECK_RADIUS)
+      const radius = reach * r * (1 - t) + neck * t
+      const next = { x: (p.x / reach) * radius, y: y * h, z: (p.y / reach) * radius }
+      if (last) body.push(last.x, last.y, last.z, next.x, next.y, next.z)
+      last = next
+    }
+  }
+  const throat = circle(neck)
+  ring(body, throat, SHOULDER_TOP * h)
+  ring(body, throat, NECK_TOP * h)
+
+  const collar: number[] = []
+  const band = circle(options.halfWidth * COLLAR_RADIUS)
+  ring(collar, band, COLLAR_BOTTOM * h)
+  ring(collar, band, COLLAR_TOP * h)
+
+  const cap: number[] = []
+  const lid = corners(
+    options.halfWidth * CAP_SCALE,
+    options.halfDepth * CAP_SCALE,
+    options.chamfer * CAP_SCALE,
+  )
+  const skirt = CAP_BOTTOM * h
+  const brow = 0.955 * h
+  const crown = CAP_TOP * h
+  ring(cap, lid, skirt)
+  ring(cap, lid, brow)
+  ring(cap, lid, crown, 0.78)
+  for (const p of lid) {
+    cap.push(p.x, skirt, p.y, p.x, brow, p.y)
+    cap.push(p.x, brow, p.y, p.x * 0.78, crown, p.y * 0.78)
+  }
+
+  return { body, cap, collar }
 }

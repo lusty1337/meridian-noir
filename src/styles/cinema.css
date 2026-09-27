@@ -1,0 +1,325 @@
+/* сквозная сцена: один холст поверх страницы и места под флакон в самой вёрстке.
+   холст стоит над текстом, поэтому текст на флакон не наезжает не потому, что его
+   прячут, а потому, что раскладка держит под ним пустое место. без сцены (нет WebGL)
+   этих мест нет вовсе, и страница остаётся прежней */
+
+/* дорожка во всю страницу: холст ездит по ней вместе с текстом. обрезка нужна, чтобы
+   холст с запасом у низа страницы не удлинял её - иначе прокрутка шла бы за подвал */
+.cinema-track {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  z-index: 20;
+  pointer-events: none;
+}
+
+/* на заставке флакон чертится поверх неё самой */
+.cinema-track.is-intro {
+  z-index: 210;
+}
+
+.cinema {
+  position: absolute;
+  top: calc(-1 * var(--over, 0px));
+  left: 0;
+  width: 100%;
+  /* большой вьюпорт: панели браузера прячутся на прокрутке, и холст в svh
+     перевыделял бы буфер на каждую смену направления пальца */
+  height: calc(100lvh + 2 * var(--over, 0px));
+  will-change: transform;
+}
+
+/* место флакона прилипло к окну - и холст держится за окно. обрезка дорожки его уже не
+   касается: fixed меряется от окна, а не от неё */
+.cinema-track.is-held .cinema {
+  position: fixed;
+}
+
+.stage-slot {
+  display: none;
+  pointer-events: none;
+}
+
+.has-cinema .stage-slot {
+  display: block;
+}
+
+/* заставка договорила: текст уходит, и на пустой бумаге чертится флакон */
+.preloader.is-quiet > * {
+  opacity: 0;
+  transition: opacity 420ms var(--ease-out-quart);
+}
+
+.index__bench,
+.method__bench {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 901px) {
+  .has-cinema .stage-slot--index-band {
+    display: none;
+  }
+
+  /* первый кадр: флакон в левой колонке над реквизитами, там, где на стене окно */
+  .has-cinema .hero__body {
+    grid-template-rows: 1fr auto;
+    align-content: stretch;
+  }
+
+  .has-cinema .hero__statement {
+    grid-row: 1 / span 2;
+    align-self: end;
+  }
+
+  .has-cinema .readings {
+    grid-row: 2;
+  }
+
+  .stage-slot--hero {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 12rem;
+    margin-bottom: clamp(1rem, 3vh, 2rem);
+  }
+
+  /* пять формул встают рядом с заголовком указателя, в пустой левой колонке */
+  .stage-slot--index {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: clamp(14rem, 30vh, 22rem);
+    /* строй не должен доходить до меридиана: пятый флакон стоял прямо на линии */
+    margin-right: 2.5rem;
+  }
+
+  /* стол формулы: флакон стоит между названиями и процентами и держится на месте, пока
+     строки идут мимо. наложение в одной клетке сетки, а не absolute: так sticky живёт
+     ровно столько, сколько идут строки */
+  .has-cinema .method {
+    grid-template-rows: auto auto auto;
+  }
+
+  .has-cinema .method__head {
+    grid-row: 1;
+  }
+
+  .has-cinema .method__bench {
+    grid-row: 2;
+    display: grid;
+  }
+
+  .has-cinema .method__bench > * {
+    grid-area: 1 / 1;
+  }
+
+  /* стол встаёт целиком, строки вместе с флаконом, на ход --pin: пока он стоит, флакон
+     разбирают и наливают. высоту строк и отступ сверху пишет сцена - стол садится посередине
+     окна, а на низком окне хода нет вовсе */
+  .has-cinema .method__bench {
+    min-height: calc(var(--rows-h, 0px) + var(--pin, 0px));
+  }
+
+  .has-cinema .formula {
+    position: sticky;
+    top: var(--pin-top, 0px);
+    align-self: start;
+  }
+
+  .stage-slot--method {
+    position: sticky;
+    top: var(--pin-top, 0px);
+    align-self: start;
+    justify-self: end;
+    width: clamp(14rem, 20vw, 24rem);
+    height: var(--rows-h, min(84vh, 100%));
+    margin-right: clamp(5rem, 8vw, 12rem);
+  }
+
+  /* высоту месту пишет сцена: поля вокруг флакона равны со всех сторон и зависят от
+     ширины колонки */
+  .stage-slot--skin {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .has-cinema .skin {
+    grid-column: 2;
+    grid-row: 3;
+    align-self: center;
+  }
+
+  /* флаконы у ставней и у цен держатся середины своей секции и едут вместе с ней: прилипшие
+     к окну, они повисали, а страница уходила из-под них */
+  .stage-slot--provenance {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+    height: min(76vh, 100%);
+    z-index: 1;
+  }
+
+  .stage-slot--acquisition {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    align-self: center;
+    height: min(70vh, 100%);
+    margin-right: 2.5rem;
+  }
+
+  .has-cinema .colophon {
+    grid-template-columns: minmax(0, 36rem) 1fr;
+    column-gap: var(--split-gap);
+  }
+
+  .has-cinema .colophon > :not(.stage-slot) {
+    grid-column: 1;
+  }
+
+  /* закат - отдельная последняя сцена, а не картинка в углу подвала: ему нужна высота,
+     чтобы флакон доиграл, когда форма письма уже ушла вверх */
+  .stage-slot--finale {
+    grid-column: 2;
+    grid-row: 1;
+    min-height: 44vh;
+  }
+}
+
+/* телефон: та же режиссура в портрете. колонки для флакона тут нет, поэтому у указателя и
+   у ставней сцена встаёт полосой в верх экрана и держится там, а текст уходит под неё.
+   непрозрачная полоса - единственный способ, при котором текст не проходит сквозь стекло */
+@media (max-width: 900px) {
+  .stage-slot--index {
+    display: none !important;
+  }
+
+  .stage-slot--hero {
+    height: clamp(15rem, 40svh, 22rem);
+  }
+
+  .stage-slot--band {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    height: clamp(14rem, 40svh, 21rem);
+    margin-inline: calc(-1 * var(--edge));
+    background: var(--band, var(--paper));
+  }
+
+  .stage-slot--band::after {
+    content: '';
+    position: absolute;
+    inset: 100% 0 auto;
+    height: 1.6rem;
+    background: linear-gradient(var(--band, var(--paper)), transparent);
+  }
+
+  .stage-slot--index-band {
+    --band: var(--shadow);
+  }
+
+  .stage-slot--provenance {
+    --band: var(--paper-deep);
+  }
+
+  .stage-slot--skin {
+    height: clamp(13rem, 32svh, 18rem);
+  }
+
+  .stage-slot--finale {
+    height: clamp(14rem, 38svh, 21rem);
+    margin-top: 1rem;
+  }
+
+  /* стол формулы и цены - сцены на всё окно. они встают целиком: флакон сверху, под ним
+     одна строка, и прокрутка меняет строки на месте, а не везёт их под стекло. полосы
+     тут нет вовсе - флакону не над чем висеть, и прятать нечего. ход в svh: малый вьюпорт
+     не меняется, когда прячутся панели браузера, и страница не растёт под пальцем */
+  .has-cinema .method__bench,
+  .has-cinema .acquisition__bench {
+    display: grid;
+    min-height: calc(100svh + var(--pin));
+  }
+
+  .has-cinema .method__bench {
+    --pin: 420svh;
+    --stage-top: 60svh;
+  }
+
+  .has-cinema .acquisition__bench {
+    --pin: 260svh;
+    --stage-top: 42svh;
+  }
+
+  .has-cinema .method__bench > *,
+  .has-cinema .acquisition__bench > * {
+    grid-area: 1 / 1;
+  }
+
+  /* место флакона и лист строк отпускает одновременно: у места под ним поле на остаток
+     окна, а липкое держится своим полем внутри родителя */
+  .stage-slot--method,
+  .stage-slot--acquisition {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: var(--stage-top);
+    margin-bottom: calc(100svh - var(--stage-top));
+  }
+
+  .has-cinema .formula,
+  .has-cinema .acquisition__bench .ledger--prices {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    display: grid;
+    align-content: start;
+    height: 100svh;
+    padding-top: var(--stage-top);
+  }
+
+  /* карточки цен одной высоты, и карточка стоит посередине под флаконами. строки формулы
+     разной длины и стоят от верха: иначе название прыгало бы вверх-вниз на каждой смене */
+  .has-cinema .acquisition__bench .ledger--prices {
+    align-content: center;
+  }
+
+  .has-cinema .acquisition__bench tbody {
+    display: grid;
+  }
+
+  /* строки стоят в одной клетке. important - против появления по прокрутке: оно пишет
+     прозрачность и сдвиг прямо в строку, а тут ими правит сцена */
+  .has-cinema .formula__row,
+  .has-cinema .acquisition__bench tbody tr {
+    grid-area: 1 / 1;
+    opacity: var(--on, 0) !important;
+    transform: translateY(calc(var(--shift, 0) * 1rem)) !important;
+  }
+
+  .has-cinema .formula__row:first-child,
+  .has-cinema .acquisition__bench tbody tr:first-child {
+    --on: 1;
+  }
+
+  .has-cinema .formula__note {
+    opacity: 1 !important;
+    filter: none !important;
+  }
+}
+
+/* рука на флаконе указателя - его строка отзывается так же, как под курсором */
+.index tbody tr.is-lit th[scope='row'] {
+  transform: translateX(6px);
+}
+
+.index tbody tr.is-lit .dot {
+  fill: var(--madder-lit);
+}
+
+/* строка формулы, чей слой сейчас льётся во флакон на столе */
+.formula__pct {
+  transition: color 360ms var(--ease-out-quart);
+}
+
+.formula__row.is-pouring .formula__pct {
+  color: var(--madder);
+}

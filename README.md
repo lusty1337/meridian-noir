@@ -1,180 +1,3 @@
-**English** · [Русский](#ru)
-
-# MERIDIAN NOIR — a perfume house website
-
-A single-page site for a fictional perfume house from Marseille, directed by scroll
-like a film. The house has five fragrances, and each is tied to one place, one day and one minute
-of harvesting the raw material — in true solar time.
-
-At the center of the page is a working sundial. The bottle stands on a marked slab as the gnomon,
-scrolling carries the sun from sunrise to sunset, and the shadow falls exactly on the hour line
-it would fall on that day at that latitude. The brand, formulas and prices are made up. The astronomy isn't.
-
-Live version: **https://egordev.com/meridian-noir/**
-
-## Running
-
-```bash
-npm install
-npm run dev
-```
-
-| command | what it does |
-|---|---|
-| `npm run dev` | Vite dev server on `:5173` |
-| `npm run build` | type check and production build into `dist/` |
-| `npm run preview` | the finished build on `:4173` |
-| `npm run preview:lan` | the same, but reachable from a phone on the same network |
-| `npm run typecheck` | `tsc --noEmit` |
-
-## The rule everything grew from
-
-**Not a single image file.** No photos, no video, no textures, no HDRI, no `.glb`.
-Everything on the page is typography, CSS, SVG, canvas and geometry the code builds
-on load. The 3D bottle isn't modeled either — it's written.
-
-It started as a constraint and became the project's best feature: you can look at the page
-as closely as you like, nothing in it can go stale or return a 404, and the assets weigh exactly two fonts.
-
-## Stack
-
-Vite and TypeScript, no framework. GSAP ScrollTrigger and Lenis for scrolling, three.js for the bottle.
-A framework wouldn't have added anything here: there's one page, almost no state, and all the interesting work
-lives in the scroll timeline and in geometry — both easier to direct with plain code.
-
-The fonts are self-hosted, not from a CDN: **Newsreader** and **Schibsted Grotesk**, both under the SIL Open Font License.
-
-## The sundial — a calculation, not an animation
-
-`src/lib/solar.ts` is a pure function with no rendering. The sun's altitude above the horizon and its azimuth
-are computed from declination and hour angle:
-
-```
-sin h = sin φ · sin δ + cos φ · cos δ · cos H
-```
-
-where φ is latitude, δ is the sun's declination on that day, H is the hour angle (15° per hour from noon).
-Shadow length is the cotangent of altitude, in gnomon heights. The hour lines on the slab sit where
-the shadow would really fall; the dashed line is the curve the tip of the shadow traces over the day.
-
-- **Five sites — five different days.** Latitude and declination come from the formula, and everything else
-  follows: the sun's arc rises or flattens, the day grows longer or shorter,
-  the fan of hour lines opens wider or narrower.
-- **Southern hemisphere.** Three of the five sites are south of the equator, and there the viewer stands on the other
-  side of the gnomon. The azimuth is rotated by 180° — not mirrored — and the hours on the dial
-  start running counterclockwise on their own, as on real southern sundials.
-- **The sky is normalized to the sun's altitude, not to local noon.** Otherwise January in Ohara
-  would look like August in Marseille.
-- **The transition between formulas** blends latitude, declination, harvest minute and air proportionally,
-  and the glass color in Oklab. The day doesn't switch — it flows into another.
-
-## A bottle written in code
-
-- **The body is a loft.** A faceted cross-section with chamfers swept along a profile. The corner rounding
-  is Blender's bevel, written in two dimensions. Normals come from the surface itself
-  (tangent along the ring × tangent along the profile), not from an angle threshold: this way the chamfers
-  catch a narrow highlight like real glass does, and there's no seam anywhere.
-- **Cap, collar, pump, dip tube.** The cap follows the body's cross-section, the pump is a solid of revolution
-  with proportions taken from a reference, the tube leans toward the deepest point of the bottom.
-- **Glass.** `MeshPhysicalMaterial` with transmission and roughness; color is Beer–Lambert
-  absorption. The gradient from madder to indigo and a wall thickness that depends on the viewing angle
-  are patched into `ShaderChunk` — three only has a single constant per material for this.
-- **The liquid** is opaque on purpose: transparent liquid inside transparent glass disappears from
-  the transmission buffer. The surface sloshes on a spring driven by angular *acceleration*: during a steady
-  turn it stays still, and it splashes when rotation starts and stops.
-- **The label** is a canvas texture in the same fonts as the page, with mipmaps.
-- **The studio** is a gradient sphere and glowing panels, run once through
-  `PMREMGenerator`. A room for reflections without a single `.hdr`.
-- **The glass shadow.** A shadow map only knows "blocked" and "open", so the glass discards
-  some fragments in the depth pass using an ordered dither matrix, and VSM blurs that into an even
-  penumbra. The near and far planes are fitted tightly to the slab — otherwise half precision isn't enough
-  and the slab gets covered in a grid pattern.
-
-## The peak scene
-
-- **The browser holds the pin.** The scene sits on `position: sticky`: switching to `fixed` from
-  the main thread arrives on a phone one frame after the scroll.
-- **Two canvases inside the scene.** The shadow gets a full-frame canvas at screen density. The bottle gets a small
-  canvas fitted to its bounds, at twice screen density: that's where the edges, the lettering and the transmission are, and nowhere
-  else. Both canvases move with the slab on their own, with no script. During normal scrolling not a single
-  WebGL frame is drawn.
-- **A backdrop for the glass.** A piece of the 2D slab under the bottle is copied into a texture and
-  hangs behind it, so the glass refracts the real shadow and not empty space.
-- **Arrival within one screen.** The bottle comes out from behind the top edge of the window exactly when the
-  section appears at the bottom, and lands on the slab as the slab arrives. The curve is smootherstep:
-  zero velocity and acceleration at both ends.
-- **Five formulas on one slab.** Arrows on the sides appear once the scroll settles.
-  The bottle makes a full turn, the label changes on the far side, and the day changes with it.
-  The bottle stays the same — four colors and one line of text change.
-- **The bottle in your hands.** Under the cursor it lifts, floats on three incommensurate sines
-  and turns away from the cursor. Everything runs on critically damped springs, so any
-  interruption is seamless. On a phone your finger spins the model, all listeners are passive, and
-  vertical scrolling isn't hijacked by a single millimeter.
-- **Layout around the text.** On a phone the day's text is measured by its longest line
-  across all formulas, and the scene is built above it. Shadows and the dashed line fade out at the edge with a mask instead of
-  being cropped.
-- **The preloader** doesn't wait for the network — there's nothing to wait for. It waits for work: fonts, shader
-  compilation and one frame of the bottle "after landing", which pays in advance for the transmission buffer and the shadow map.
-
-## Scrolling and reveals
-
-Lenis and ScrollTrigger. Each reveal is tied to its own element, not to the section, and
-replays every time it comes back into view — in both directions and as many times as you like.
-
-## When something is missing
-
-- **Without JavaScript** the whole page is still readable, and the peak scene turns into a text
-  transcript of the day with all the numbers.
-- **`prefers-reduced-motion`** gets a different cut of the same film: no Lenis and no pin, the scene
-  draws one frame at the harvest minute, reveals become short fade-ins.
-- **Narrow screens** — the meridian moves to the left edge, tables rebuild into labeled
-  rows, the Index button moves to the top right corner.
-- **Screen notch.** `viewport-fit=cover`: the page is drawn all the way to the top of the phone, while
-  text, buttons and the sun sit below the Dynamic Island.
-
-## Accessibility
-
-Contrast is chosen by the numbers: body text is 13:1 on paper and 10.8:1 on the dark field; the madder
-accent exists in three lightness levels to hold 4.5:1 on any surface. The Index panel is a
-native `<dialog>`, tables are real tables with `scope` and tabular figures, and every
-control has a visible focus.
-
-## Lab
-
-`/lab/bottle.html` is the model-building page: orbit, wireframe, normals, fixed camera angles.
-The site doesn't link to it, and it's closed to indexing.
-
-## Source layout
-
-```
-index.html             all the page text and the static SVG
-src/
-  main.ts              load order
-  data/formulas.ts     five formulas: coordinates, days, colors, day lines
-  lib/                 scrolling, reveals, parallax, sun, color, preloader
-  model/               the bottle: geometry, glass, liquid, pump, label, studio
-  scenes/              page scenes, the sundial and the bottle's 3D scene
-  styles/              tokens, base, scenes
-  lab/                 the model lab
-```
-
-## Deployment
-
-GitHub Pages via Actions: `.github/workflows/deploy.yml` builds the project with
-`--base=/meridian-noir/` and publishes `dist/` on every push to `main`.
-
-## License
-
-[All Rights Reserved](LICENSE) — the code, 3D geometry and design are protected by copyright.
-Copying, modification and use without written permission are prohibited.
-Fonts are distributed under SIL OFL 1.1, third-party libraries under their own licenses.
-
----
-
-<a name="ru"></a>
-
-[English](#readme) · **Русский**
-
 # MERIDIAN NOIR — сайт парфюмерного дома
 
 Одностраничный сайт вымышленного парфюмерного дома из Марселя, срежиссированный прокруткой
@@ -210,6 +33,10 @@ npm run dev
 
 Началось как ограничение, а стало лучшим свойством проекта: страницу можно рассматривать
 сколь угодно близко, в ней нечему устареть или отдать 404, а ассеты весят ровно два шрифта.
+
+Единственное исключение — `public/og.jpg`, превью ссылки для соцсетей и мессенджеров.
+Страница его не показывает: краулеры не умеют рендерить WebGL, и снимок сцены приходится
+отдать им готовым.
 
 ## Стек
 
@@ -254,9 +81,14 @@ sin h = sin φ · sin δ + cos φ · cos δ · cos H
 - **Стекло.** `MeshPhysicalMaterial` с transmission и шероховатостью, цвет — поглощение по
   Беру — Ламберту. Градиент от марены к индиго и толщина стенки, зависящая от угла взгляда,
   вписаны патчем в `ShaderChunk` — у three на это одна константа на материал.
+- **Фрост без лесенок.** three размывает то, что за стеклом, одним уровнем мипмапа, где точка
+  буфера — шестнадцать точек экрана, и наклонная кромка настоя за стеклом шла по этой сетке
+  волной. Здесь выборка заменена диском из 24 отсчётов с уровня вдвое мельче и весом по
+  гауссу: размытие то же, а сетки не видно.
 - **Настой** непрозрачный намеренно: прозрачная жидкость в прозрачном стекле пропадает из
   буфера просвета. Поверхность колышется на пружине от углового *ускорения*: на ровном
-  повороте стоит, на старте и остановке плещет.
+  повороте стоит, на старте и остановке плещет. Мениск поднимается только у стенки, само
+  зеркало плоское и разбито на кольца — рябь считается по вершинам.
 - **Этикетка** — canvas-текстура теми же шрифтами, что и страница, с мип-уровнями.
 - **Студия** — сфера с градиентом и светящиеся панели, прогнанные один раз через
   `PMREMGenerator`. Комната для отражений без единого `.hdr`.
@@ -271,16 +103,20 @@ sin h = sin φ · sin δ + cos φ · cos δ · cos H
   главного потока на телефоне приходит на кадр позже прокрутки.
 - **Два холста внутри сцены.** Тень — на весь кадр в плотности экрана. Флакон — в маленьком
   холсте по габариту бутылки, вдвое плотнее экрана: там края, надпись и просвет, и больше
-  нигде. Оба холста едут с плитой сами, без скрипта. На обычной прокрутке не рисуется ни
-  одного кадра WebGL.
+  нигде. Оба холста едут с плитой сами, без скрипта: пока солнце стоит, сцена пика не
+  рисует ни одного кадра WebGL.
 - **Подложка для стекла.** Кусок двумерной плиты под флаконом копируется в текстуру и
   висит за ним, так что стекло преломляет настоящую тень, а не пустоту.
 - **Появление за один экран.** Флакон выходит из-за верхней кромки окна ровно тогда, когда
   секция показывается снизу, и садится на плиту вместе с её приходом. Кривая — smootherstep:
   нулевые скорость и ускорение на обоих концах.
-- **Пять формул на одной плите.** Стрелки по бокам появляются, когда прокрутка затихает.
-  Флакон делает полный оборот, этикетка меняется на дальней стороне, вместе с ним меняется
+- **Пять формул на одной плите.** Стрелки по бокам видны, пока сцена стоит на пине, под
+  ними имена соседних формул, при первом показе они один раз качаются в свои стороны; с
+  клавиатуры — ← и →. Флакон делает полный оборот, этикетка меняется на дальней стороне, вместе с ним меняется
   день. Бутылка остаётся той же — меняются четыре цвета и строка текста.
+- **Формулы из меню Index** ведут не к таблице, а в сцену: прокрутка останавливается ровно
+  на минуте среза выбранной формулы, и уже после этого флакон поворачивается к ней коротким
+  путём по кругу.
 - **Флакон в руках.** Под курсором он приподнимается, парит на трёх несоизмеримых синусах
   и отворачивается от курсора. Всё на критически задемпфированных пружинах, поэтому любые
   прерывания бесшовны. На телефоне палец крутит модель, а все слушатели пассивные, и
@@ -291,6 +127,50 @@ sin h = sin φ · sin δ + cos φ · cos δ · cos H
 - **Прелоадер** не ждёт сеть — ждать нечего. Он ждёт работу: шрифты, сборку шейдеров и один
   кадр флакона «после посадки», который заранее оплачивает буфер просвета и карту теней.
 
+## Сквозная сцена
+
+Флакон не живёт в одной секции — это главный герой всей страницы. Поверх вёрстки лежит один
+прозрачный холст с длиннофокусной камерой, и флакон переходит из акта в акт, не пропадая и
+не появляясь заново.
+
+- **Места под флакон держит вёрстка.** В разметке стоят пустые блоки — у героя, у указателя,
+  у стола формулы, у ставней, у цен, в подвале. Холст лежит над текстом, и текст на флакон
+  не наезжает не потому, что его прячут, а потому, что под флаконом пусто на любой ширине.
+- **Режиссёр — чистая функция прокрутки.** Акты отсчитываются от своих секций, а не от
+  процентов страницы. Между соседями кадр смешивается целиком: место, ракурс, свет, цвет
+  стекла, сколько флаконов начерчено.
+- **Акты.** Заставка — флакон чертится мареной и по чертежу нарастает стекло. Полдень —
+  флакон в колонке у окна. Указатель — пять формул встают строем, под курсором строки
+  поднимается её флакон. Стол формулы на широком экране встаёт целиком на полтора экрана
+  прокрутки: флакон разбирают, слои льются по очереди, строка текущего слоя отзывается
+  цифрой, потом флакон собирают и переносят дугой к «on skin» — туда, где место окажется к
+  концу переноса. На телефоне стол — сцена на всё окно: флакон сверху, под ним одна строка
+  за раз, и прокрутка сменяет строки на месте, пока льётся их слой. «On skin» подсвечивает те слои, что сейчас звучат на коже. Дальше флакон уходит за верх окна, а на плиту полудня
+  спускается сверху — это тот же предмет, переданный через кромку. Потом комната ставней,
+  три объёма у цен (масштаб — кубический корень из объёма) и закат в подвале, где тень
+  тянется к подписи.
+- **Слои — это шейдер, а не меши.** Настой режется на доли по высоте столба, стык
+  затемнён тонкой чертой, а подсветка «на коже» — битовая маска. Программа у всех флаконов
+  одна, и слои не стоят ни одной пересборки.
+- **Геометрия одна на все восемь флаконов** и лежит с индексом: около 10 тыс. треугольников
+  и 5 тыс. вершин на флакон. Скругления профиля дробятся по допуску в четверть пикселя на
+  самом крупном плане, плоские грани крышки не дробятся вовсе.
+- **Места считаются по проекции.** Флакон ставится посередине своего места по тому, что
+  видно на экране с наклоном и поворотом, — поэтому поля вокруг него равны с четырёх сторон.
+- **Крупность — расстояние, а не масштаб.** three считает путь луча сквозь стекло с учётом
+  масштаба модели, и увеличенный флакон густел бы до синего пластика.
+- **Подложка под стекло** — цвет секции под флаконом, прочитанный через холст: браузер
+  отдаёт фон в oklch, и разбор строки как rgb давал ярко-синюю стену.
+- **Телефон** — та же режиссура в портрете. Стол формулы и цены встают в пин: флакон в
+  верхней части окна, под ним одна строка, а при смене строки флаконы у цен меняют формулу.
+  Текст под стекло не заходит нигде.
+- **Меридиан прочерчен по странице**, а не по окну: над тёмным полем он светлее, на плите
+  полудня уходит за флакон, а свет ставней и тени флаконов кончаются, не доходя до него.
+- Кадр рисуется в том же тике, что и прокрутка, и только если в нём что-то сдвинулось. Холст
+  лежит в самой странице, с запасом над окном и под ним: на телефоне страницу двигает браузер
+  в своём потоке, и холст едет вместе с текстом, даже когда кадр запаздывает. Пока место
+  флакона прилипло к окну, холст держится за окно.
+
 ## Прокрутка и появления
 
 Lenis и ScrollTrigger. Каждое появление привязано к своему элементу, а не к секции, и
@@ -298,12 +178,18 @@ Lenis и ScrollTrigger. Каждое появление привязано к с
 
 ## Когда чего-то нет
 
+- **Слабое железо** узнаётся по кадрам: если медиана рисующих кадров длиннее 25 мс, карта
+  теней становится вдвое меньше при той же ширине полутени, а у фроста вдвое меньше
+  отсчётов. Плотность холста не трогается никогда — флакон не пикселится.
+- **Потеря контекста WebGL.** Телефон отбирает его у вкладки в фоне. three заводит буферы
+  заново сам, а комнату для отражений сцены снимают повторно — иначе стекло вернулось бы
+  чёрным.
 - **Без JavaScript** страница целиком читается, а пиковая сцена превращается в текстовую
   расшифровку дня со всеми числами.
-- **`prefers-reduced-motion`** — другой монтаж того же фильма: без Lenis и пина, сцена
-  рисует один кадр в минуту среза, появления становятся короткими проявлениями.
+- **`prefers-reduced-motion`** — другой монтаж того же фильма: без Lenis, пина и сквозной
+  сцены, пик рисует один кадр в минуту среза, появления становятся короткими проявлениями.
 - **Узкий экран** — меридиан уходит к левому краю, таблицы перестраиваются в подписанные
-  строки, кнопка Index — в правый верхний угол.
+  строки, кнопка Index — из закладки на левом поле в правый верхний угол.
 - **Вырез экрана.** `viewport-fit=cover`: страница рисуется до самого верха телефона, а
   текст, кнопки и солнце стоят ниже Dynamic Island.
 
@@ -329,6 +215,7 @@ src/
   lib/                 прокрутка, появления, параллакс, солнце, цвет, прелоадер
   model/               флакон: геометрия, стекло, настой, помпа, этикетка, студия
   scenes/              сцены страницы, солнечные часы и 3D-сцена флакона
+  cinema/              сквозная сцена: актёр, площадка, режиссёр
   styles/              токены, база, сцены
   lab/                 стенд модели
 ```

@@ -11,12 +11,28 @@
       content="MERIDIAN NOIR is a maison de parfum in Marseille. Five formulas, each fixed to one set of coordinates and to the minute of the cut in apparent solar time."
     />
     <meta name="theme-color" content="#e3ebef" />
+    <meta name="author" content="Egor" />
+    <link rel="canonical" href="https://egordev.com/meridian-noir/" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="MERIDIAN NOIR" />
+    <meta property="og:site_name" content="MERIDIAN NOIR" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content="https://egordev.com/meridian-noir/" />
+    <meta property="og:title" content="MERIDIAN NOIR — five formulas, five coordinates" />
     <meta
       property="og:description"
       content="Five formulas, each fixed to one set of coordinates and to the minute of the cut."
     />
+    <!-- адрес полный: краулеры соцсетей относительный путь не разворачивают, а base у
+         сборки на Pages не корень. это единственная картинка проекта, и странице она не нужна -->
+    <meta property="og:image" content="https://egordev.com/meridian-noir/og.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="A perfume flacon standing as the gnomon of a sundial on a ruled plate, its shadow on the hour of the cut."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preload" href="/fonts/newsreader-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/schibsted-latin.woff2" as="font" type="font/woff2" crossorigin />
@@ -39,7 +55,7 @@
       <p class="preloader__note">Setting the plate</p>
     </div>
 
-    <!-- линия меридиана и зерно бумаги живут поверх всего документа и не скроллятся -->
+    <!-- меридиан прочерчен по всей странице и едет с ней; зерно бумаги стоит на экране -->
     <div class="meridian" aria-hidden="true"><i class="meridian__ticks"></i></div>
     <div class="grain" aria-hidden="true"></div>
 
@@ -58,11 +74,11 @@
       <div class="index-panel__inner">
         <p class="index-panel__label">Five formulas</p>
         <nav class="index-panel__nav" aria-label="Formulas">
-          <a href="#index">Cypress <span>12:04</span></a>
-          <a href="#index">Halite <span>11:52</span></a>
-          <a href="#index">Vetiver <span>12:31</span></a>
-          <a href="#index">Hinoki <span>13:07</span></a>
-          <a href="#index">Orris <span>12:18</span></a>
+          <a href="#sweep" data-formula="cypress">Cypress <span>12:04</span></a>
+          <a href="#sweep" data-formula="halite">Halite <span>11:52</span></a>
+          <a href="#sweep" data-formula="vetiver">Vetiver <span>12:31</span></a>
+          <a href="#sweep" data-formula="hinoki">Hinoki <span>13:07</span></a>
+          <a href="#sweep" data-formula="orris">Orris <span>12:18</span></a>
         </nav>
         <p class="index-panel__label">The house</p>
         <nav class="index-panel__nav index-panel__nav--sections" aria-label="Sections">
@@ -111,6 +127,11 @@
             </p>
           </div>
 
+          <!-- места, где стоит флакон, - пустые блоки в самой вёрстке. его рисует один холст
+               поверх страницы, а место под ним держит раскладка: так текст не может на него
+               наехать ни на какой ширине. без сцены эти блоки не занимают ничего -->
+          <div class="stage-slot stage-slot--hero" data-slot="hero" aria-hidden="true"></div>
+
           <div class="readings">
             <p class="readings__title">Harvest record · Cypress 12:04</p>
             <dl class="readings__list" data-reveal-stagger>
@@ -148,6 +169,10 @@
           <p class="lead">Five formulas, in the order they were fixed.</p>
         </div>
 
+        <div class="stage-slot stage-slot--index" data-slot="index" aria-hidden="true"></div>
+
+        <div class="index__bench">
+        <div class="stage-slot stage-slot--band stage-slot--index-band" data-slot="index" aria-hidden="true"></div>
         <table class="ledger">
           <caption class="visually-hidden">
             The five MERIDIAN NOIR formulas with the hour of the cut, coordinates, place, air
@@ -218,6 +243,7 @@
             </tr>
           </tbody>
         </table>
+        </div>
 
         <p class="index__foot">
           Hours are apparent solar time. Transit is 12:00 by definition; the number on the label is
@@ -232,6 +258,8 @@
           <p class="lead">Cypress 12:04. Seven lines, and the last one is alcohol.</p>
         </div>
 
+        <div class="method__bench">
+        <div class="stage-slot stage-slot--method" data-slot="method" aria-hidden="true"></div>
         <ol class="formula">
           <li class="formula__row" data-reveal-row>
             <p class="formula__name">Cypress absolute<span>Cupressus sempervirens · Provence</span></p>
@@ -281,6 +309,9 @@
             <p class="formula__pct num">38.1<i>%</i></p>
           </li>
         </ol>
+        </div>
+
+        <div class="stage-slot stage-slot--skin" data-slot="skin" aria-hidden="true"></div>
 
         <div class="skin">
           <h3 class="skin__title">On skin</h3>
@@ -303,6 +334,7 @@
           <!-- тень и сам флакон - два холста: тени хватает плотности экрана, а стеклу
                и надписи нужна своя, вдвое выше, и только там, где они есть -->
           <canvas class="sweep__shade" data-sweep-shade aria-hidden="true"></canvas>
+          <i class="sweep__meridian" aria-hidden="true"></i>
           <canvas class="sweep__flacon" data-sweep-flacon aria-hidden="true"></canvas>
 
           <div class="sweep__hud">
@@ -327,8 +359,11 @@
               aria-controls="sweep"
               data-flacon-prev
             >
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 L7 12 L15 20" /></svg>
-              <span class="visually-hidden">Previous formula</span>
+              <span class="flacon-switch__disc" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M15 4 L7 12 L15 20" /></svg>
+              </span>
+              <span class="visually-hidden">Previous formula:</span>
+              <span class="flacon-switch__name" data-flacon-name>Orris</span>
             </button>
             <button
               class="flacon-switch__arrow flacon-switch__arrow--next"
@@ -336,8 +371,11 @@
               aria-controls="sweep"
               data-flacon-next
             >
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 L17 12 L9 20" /></svg>
-              <span class="visually-hidden">Next formula</span>
+              <span class="flacon-switch__disc" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M9 4 L17 12 L9 20" /></svg>
+              </span>
+              <span class="visually-hidden">Next formula:</span>
+              <span class="flacon-switch__name" data-flacon-name>Halite</span>
             </button>
           </div>
         </div>
@@ -368,6 +406,8 @@
         <div class="provenance__light" aria-hidden="true" data-depth="0.72">
           <svg viewBox="0 0 600 1400" preserveAspectRatio="xMidYMid slice" data-shutter></svg>
         </div>
+
+        <div class="stage-slot stage-slot--band stage-slot--provenance" data-slot="provenance" aria-hidden="true"></div>
 
         <div class="provenance__copy">
           <h2 class="display">What it costs to be exact</h2>
@@ -411,6 +451,9 @@
           </p>
         </div>
 
+        <div class="acquisition__bench">
+        <div class="stage-slot stage-slot--acquisition" data-slot="acquisition" aria-hidden="true"></div>
+
         <table class="ledger ledger--prices">
           <caption class="visually-hidden">Prices by formula and bottle size, in euro.</caption>
           <thead>
@@ -429,6 +472,7 @@
             <tr data-reveal-row><th scope="row" data-label="Formula">Orris 12:18</th><td data-label="9&nbsp;ml" class="num">€74</td><td data-label="60&nbsp;ml" class="num">€340</td><td data-label="100&nbsp;ml" class="num">€495</td></tr>
           </tbody>
         </table>
+        </div>
 
         <form class="letter" data-letter novalidate>
           <h3 class="letter__title">Write to the atelier</h3>
@@ -448,12 +492,19 @@
     </main>
 
     <footer class="colophon">
+      <div class="colophon__text">
       <p class="wordmark" translate="no">Meridian Noir</p>
       <p>14 rue Sainte, Marseille 13001 · Maison de parfum, founded 2016</p>
       <p class="colophon__note">
         A fictional brand, built as a portfolio piece. The house, the formulas and the prices are
         invented; the solar geometry is not.
       </p>
+      <p class="colophon__credit">
+        Concept, design and code by <a href="https://egordev.com/">Egor</a> ·
+        <a href="https://github.com/lusty1337/meridian-noir">Source</a>
+      </p>
+      </div>
+      <div class="stage-slot stage-slot--finale" data-slot="finale" aria-hidden="true"></div>
     </footer>
 
     <script type="module" src="/src/main.ts"></script>

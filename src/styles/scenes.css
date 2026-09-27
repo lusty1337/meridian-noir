@@ -375,7 +375,8 @@
 
 /* пин держит браузер: сцена липнет к верху окна, пока секция не кончится. длина
    секции и есть длина дня - четыре окна прокрутки поверх самой сцены. z-index нужен
-   флакону: на подлёте его холст выходит из сцены вверх, поверх предыдущей секции */
+   флакону: на подлёте его холст выходит из сцены вверх, поверх предыдущей секции, и
+   поверх её флакона тоже - поэтому сцена выше общего холста, а не под ним */
 @media (prefers-reduced-motion: no-preference) {
   .js .sweep {
     height: 500lvh;
@@ -384,7 +385,7 @@
   .js .sweep__stage {
     position: sticky;
     top: 0;
-    z-index: 2;
+    z-index: 21;
   }
 }
 
@@ -403,6 +404,28 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
+}
+
+/* меридиан сцены. общая линия страницы над плитой прерывается, а здесь идёт своя - между
+   плитой и флаконом: линия лежит на сцене, флакон стоит перед ней. тот же цвет и те же
+   засечки, поэтому шва на краях секции не видно */
+.sweep__meridian {
+  position: absolute;
+  inset-block: 0;
+  left: var(--meridian);
+  width: 1px;
+  background: var(--hair-madder);
+  pointer-events: none;
+}
+
+.sweep__meridian::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: -3px;
+  width: 7px;
+  background: var(--hair-madder);
+  mask-image: repeating-linear-gradient(to bottom, #000 0 1px, transparent 1px 46px);
 }
 
 /* сам флакон - маленький холст по коробке предмета. размер и сдвиг ему ставит
@@ -445,22 +468,25 @@
   opacity: 1;
 }
 
+/**
+ * стрелки видны всё время, пока сцена стоит, и сразу говорят, что будет по нажатию: под
+ * каждой имя соседней формулы. раньше они проступали только после паузы в прокрутке, на
+ * половине яркости и без подписи - их находили случайно, если находили вообще. то, что
+ * появляется лишь при условии, для зрителя не существует
+ */
 .flacon-switch__arrow {
   position: absolute;
   top: var(--cy, 50%);
   display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
+  justify-items: center;
+  gap: 9px;
   padding: 0;
   border: 0;
-  border-radius: 50%;
   background: none;
-  color: var(--ink);
+  color: var(--hud-ink, var(--ink));
   cursor: pointer;
   /* стрелки просыпаются вместе с контейнером, но каждая от своей стороны */
-  transition: transform 420ms var(--ease-out-quart), opacity 200ms linear;
-  opacity: 0.55;
+  transition: transform 420ms var(--ease-out-quart);
 }
 
 .is-awake .flacon-switch__arrow {
@@ -482,37 +508,94 @@
   transform: translate(-50%, -50%);
 }
 
+/*
+ * круг с кромкой и плотной подложкой: на любом небе сцены это кнопка, а не росчерк.
+ * размытия под ним нет - backdrop-filter над живым холстом заставлял браузер каждый
+ * кадр вычитывать картинку сцены, и прокрутка всей страницы шла рывками
+ */
+.flacon-switch__disc {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid color-mix(in oklch, currentColor 42%, transparent);
+  border-radius: 50%;
+  background: color-mix(in oklch, var(--paper) 84%, transparent);
+  transition:
+    background-color var(--dur-hover) var(--ease-out-quart),
+    border-color var(--dur-hover) var(--ease-out-quart),
+    color var(--dur-hover) var(--ease-out-quart),
+    scale var(--dur-hover) var(--ease-out-quart);
+}
+
 .flacon-switch__arrow svg {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.25;
+  stroke-width: 1.5;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.flacon-switch__arrow::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border: 1px solid currentColor;
-  border-radius: 50%;
-  opacity: 0;
-  transform: scale(0.86);
-  transition: opacity var(--dur-hover) var(--ease-out-quart),
-    transform var(--dur-hover) var(--ease-out-quart);
+.flacon-switch__name {
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
-.flacon-switch__arrow:hover,
+@media (hover: hover) and (pointer: fine) {
+  .flacon-switch__arrow:hover .flacon-switch__disc {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+    scale: 1.06;
+  }
+}
+
 .flacon-switch__arrow:focus-visible {
-  opacity: 1;
+  outline: none;
 }
 
-.flacon-switch__arrow:hover::before,
-.flacon-switch__arrow:focus-visible::before {
-  opacity: 0.32;
-  transform: scale(1);
+.flacon-switch__arrow:focus-visible .flacon-switch__disc {
+  outline: 2px solid var(--madder-deep);
+  outline-offset: 3px;
+}
+
+.flacon-switch__arrow:active .flacon-switch__disc {
+  scale: 0.94;
+}
+
+/* при первом появлении стрелки один раз показывают, куда их ведут: круг качается в свою
+   сторону, как палец, пробующий листнуть. дальше они стоят спокойно */
+.flacon-switch.is-hinting .flacon-switch__arrow--prev .flacon-switch__disc {
+  animation: switch-hint-prev 1.1s var(--ease-out-quart) 2;
+}
+
+.flacon-switch.is-hinting .flacon-switch__arrow--next .flacon-switch__disc {
+  animation: switch-hint-next 1.1s var(--ease-out-quart) 2;
+}
+
+@keyframes switch-hint-prev {
+  0%,
+  100% {
+    translate: 0;
+  }
+  35% {
+    translate: -7px 0;
+  }
+}
+
+@keyframes switch-hint-next {
+  0%,
+  100% {
+    translate: 0;
+  }
+  35% {
+    translate: 7px 0;
+  }
 }
 
 /* текст дня справа, за концом дуги. у меридиана он стоял посреди неба, и солнце
@@ -623,6 +706,9 @@
   top: -6rem;
   bottom: -6rem;
   width: calc(var(--meridian) + 2.5rem);
+  /* рисунок ставней шире колонки, но свет кончается на меридиане: заходя за линию, полосы
+     ложились под текст справа, и абзацы читались по зебре */
+  clip-path: inset(-1px 2.5rem -1px 0);
   z-index: 0;
   will-change: transform;
 }
@@ -685,6 +771,12 @@
 
 .acquisition__head .lead {
   margin-top: 0.9rem;
+}
+
+/* обёртка нужна только сцене на телефоне: там место флакона и цены липнут вместе и
+   отпускают вместе. на широком экране её для сетки нет */
+.acquisition__bench {
+  display: contents;
 }
 
 .ledger--prices thead th {
@@ -881,6 +973,7 @@
 
   .provenance__light {
     width: 100%;
+    clip-path: none;
     opacity: 0.5;
   }
 
@@ -1022,8 +1115,9 @@
 @media (prefers-reduced-motion: reduce) {
   .flacon-switch,
   .flacon-switch__arrow,
-  .flacon-switch__arrow::before {
+  .flacon-switch__disc {
     transition: none;
+    animation: none;
   }
 
   /* другой монтаж того же фильма: пик не пинится и не скрабится, но кадр остаётся,

@@ -1,3 +1,4 @@
+import type { Cinema } from '../cinema'
 import { prefersReducedMotion } from './motion'
 import { holdScroll, releaseScroll, ScrollTrigger } from './scroll'
 
@@ -17,7 +18,11 @@ const FLOOR_MS = 620
 /** доли, на которые встаёт линия: сначала шрифты, потом сцена */
 const STEPS = [0.42, 1]
 
-export function initPreloader(scene: Promise<void>, reveal: () => void): void {
+export function initPreloader(
+  scene: Promise<void>,
+  reveal: () => void,
+  cinema: Cinema | null = null,
+): void {
   const fonts = document.fonts ? document.fonts.ready.then(() => undefined) : Promise.resolve()
   const root = document.querySelector<HTMLElement>('[data-preloader]')
 
@@ -43,30 +48,45 @@ export function initPreloader(scene: Promise<void>, reveal: () => void): void {
 
   // сцена может не собраться вовсе - без WebGL её просто нет, и это не повод
   // держать заставку на экране
-  void Promise.all([fonts, scene.catch(() => undefined)]).then(() => {
-    step(1)
-    const wait = Math.max(0, FLOOR_MS - (performance.now() - started))
-
-    window.setTimeout(() => {
+  void Promise.all([fonts, scene.catch(() => undefined), cinema?.ready.catch(() => undefined)])
+    .then(async () => {
+      step(1)
+      if (!cinema) return
       /**
-       * появления заводятся здесь, а не на старте страницы. заведи их раньше - и первый
-       * экран отыграет своё появление за занавесом, пока его никто не видит. а тут
-       * заголовок начинает выезжать в тот же момент, когда занавес начинает уходить, и
-       * зритель застаёт движение целиком
+       * всё загружено, и только теперь флакон. текст заставки уходит, на пустой бумаге
+       * чертится контур и по нему нарастает стекло, и занавес поднимается лишь за готовым
+       * флаконом. чертить раньше, пока шла сборка, значило бы чертить рывками: сборка
+       * шейдеров занимает главный поток целыми кадрами
        */
-      reveal()
-      ScrollTrigger.refresh()
+      await new Promise((resolve) => window.setTimeout(resolve, Math.max(0, FLOOR_MS - (performance.now() - started))))
+      root.classList.add('is-quiet')
+      await new Promise((resolve) => window.setTimeout(resolve, 460))
+      await cinema.settle()
+    })
+    .then(() => {
+      const wait = Math.max(0, FLOOR_MS - (performance.now() - started))
 
-      root.classList.add('is-done')
-      releaseScroll()
-
-      const close = (): void => {
-        root.remove()
-        // пин отсчитывается от верха документа, а заставка держала его в нуле
+      window.setTimeout(() => {
+        /**
+         * появления заводятся здесь, а не на старте страницы. заведи их раньше - и первый
+         * экран отыграет своё появление за занавесом, пока его никто не видит. а тут
+         * заголовок начинает выезжать в тот же момент, когда занавес начинает уходить, и
+         * зритель застаёт движение целиком
+         */
+        reveal()
         ScrollTrigger.refresh()
-      }
-      if (reduced) close()
-      else root.addEventListener('transitionend', close, { once: true })
-    }, wait)
-  })
+
+        root.classList.add('is-done')
+        releaseScroll()
+        cinema?.release()
+
+        const close = (): void => {
+          root.remove()
+          // пин отсчитывается от верха документа, а заставка держала его в нуле
+          ScrollTrigger.refresh()
+        }
+        if (reduced) close()
+        else root.addEventListener('transitionend', close, { once: true })
+      }, wait)
+    })
 }

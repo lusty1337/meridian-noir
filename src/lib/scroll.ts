@@ -47,6 +47,8 @@ export function releaseScroll(): void {
 /** якорные ссылки должны попадать в цель и при включённом lenis, и без него */
 export function bindAnchors(): void {
   document.addEventListener('click', (event) => {
+    // ссылку уже забрала себе сцена пика: формулам из Index нужна минута внутри пина
+    if (event.defaultPrevented) return
     const link = (event.target as HTMLElement | null)?.closest?.('a[href^="#"]')
     if (!(link instanceof HTMLAnchorElement)) return
 
@@ -64,6 +66,14 @@ export function bindAnchors(): void {
     ;(target as HTMLElement).setAttribute('tabindex', '-1')
     ;(target as HTMLElement).focus({ preventScroll: true })
   })
+}
+
+export function glideTo(y: number, done: () => void): void {
+  if (lenis) lenis.scrollTo(y, { lock: true, duration: 1.1, onComplete: () => done() })
+  else {
+    window.scrollTo(0, y)
+    done()
+  }
 }
 
 export { gsap, ScrollTrigger }

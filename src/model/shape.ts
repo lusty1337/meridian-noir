@@ -14,9 +14,19 @@ const EPS = 1e-9
  * скругляет каждую вершину замкнутого контура дугой заданного радиуса. это и есть bevel из
  * блендера, только в двух измерениях: им набирается и сечение корпуса (фаски по четырём
  * углам), и профиль (переход дна в стенку, стенки в плечо). радиус задаётся на вершину,
- * потому что дну хватает волоска, а плечу нужен палец
+ * потому что дну хватает волоска, а плечу нужен палец.
+ *
+ * tolerance - насколько хорда может отойти от дуги. steps тогда только потолок: пологий
+ * угол в пару градусов и волосяная фаска в два пикселя получали те же пять колец, что и
+ * плечо, и каждое такое кольцо шло через весь флакон полосой треугольников, которых на
+ * экране не видно. ноль оставляет прежний равный шаг, массив задаёт допуск на каждый угол
  */
-export function roundCorners(points: Vec2[], radii: number[], steps: number): Vec2[] {
+export function roundCorners(
+  points: Vec2[],
+  radii: number[],
+  steps: number,
+  tolerance: number | number[] = 0,
+): Vec2[] {
   const n = points.length
   const out: Vec2[] = []
 
@@ -55,8 +65,14 @@ export function roundCorners(points: Vec2[], radii: number[], steps: number): Ve
     while (delta > Math.PI) delta -= Math.PI * 2
     while (delta < -Math.PI) delta += Math.PI * 2
 
-    for (let s = 0; s <= steps; s += 1) {
-      const t = from + (delta * s) / steps
+    const tol = Array.isArray(tolerance) ? tolerance[i] : tolerance
+    const arc =
+      tol > 0
+        ? Math.min(steps, Math.ceil(Math.abs(delta) / (2 * Math.acos(Math.max(0, 1 - tol / radius)))))
+        : steps
+    const count = Math.max(1, arc)
+    for (let s = 0; s <= count; s += 1) {
+      const t = from + (delta * s) / count
       out.push({ x: centre.x + Math.cos(t) * radius, y: centre.y + Math.sin(t) * radius })
     }
   }

@@ -1,14 +1,16 @@
 import './styles/tokens.css'
 import './styles/base.css'
 import './styles/scenes.css'
+import './styles/cinema.css'
 
+import { initCinema } from './cinema'
 import { bindAnchors, initScroll } from './lib/scroll'
 import { watchMotionPreference } from './lib/motion'
 import { initPreloader } from './lib/preloader'
 import { initReveals } from './lib/reveal'
 import { initParallax } from './lib/parallax'
 import { initHero } from './scenes/hero'
-import { initInversion } from './scenes/inversion'
+import { initInversion, initMeridian } from './scenes/inversion'
 import { initLetter } from './scenes/letter'
 import { initNav } from './scenes/nav'
 import { initShutter } from './scenes/shutter'
@@ -18,9 +20,14 @@ initScroll()
 bindAnchors()
 watchMotionPreference()
 
+// сквозная сцена заводится раньше всех: она раскрывает в вёрстке места под флакон, и всё,
+// что меряет страницу, обязано мерить её уже с ними
+const cinema = initCinema()
+
 initNav()
 initLetter()
 initInversion()
+initMeridian()
 initShutter()
 initHero()
 initParallax()
@@ -28,4 +35,4 @@ initParallax()
 // заставка держит прокрутку до тех пор, пока сцена полудня не соберёт свои
 // программы: компиляция просвета идёт в главном потоке, и на первое движение
 // колеса она приходить не должна
-initPreloader(initSweep(), initReveals)
+initPreloader(initSweep(), initReveals, cinema)

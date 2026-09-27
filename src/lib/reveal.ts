@@ -32,6 +32,7 @@ function appear(
   rest: gsap.TweenVars,
   play: gsap.TweenVars,
   start: string,
+  end?: () => string,
 ): void {
   if (!items.length) return
 
@@ -45,6 +46,7 @@ function appear(
 
   ScrollTrigger.batch(items, {
     start,
+    ...(end ? { end } : {}),
     onEnter: run,
     onEnterBack: run,
     onLeave: reset,
@@ -112,11 +114,23 @@ function revealRows(reduced: boolean): void {
   const rows = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal-row]'))
   if (!rows.length) return
 
+  /**
+   * на широком экране стол формулы стоит на месте, пока во флакон льются слои, и строки
+   * стоят вместе с ним. уходят они из кадра на длину этой стоянки позже, чем стояли бы в
+   * потоке, и счёт ухода сдвигается на неё же - иначе строки гасли по одной прямо на столе
+   */
+  const bench = rows[0].closest<HTMLElement>('.method__bench')
+  const leave = (): string => {
+    const pin = bench ? parseFloat(getComputedStyle(bench).getPropertyValue('--pin')) || 0 : 0
+    return `bottom+=${pin} top`
+  }
+
   appear(
     rows,
     { opacity: 0, y: reduced ? 0 : 14 },
     { opacity: 1, y: 0, duration: 0.64, stagger: 0.04, ease: 'power3.out' },
     'top 90%',
+    leave,
   )
 
   if (reduced) return
@@ -138,5 +152,6 @@ function revealRows(reduced: boolean): void {
       ease: 'power2.out',
     },
     'top 90%',
+    leave,
   )
 }

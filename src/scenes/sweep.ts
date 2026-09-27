@@ -1,5 +1,6 @@
-import { gsap, ScrollTrigger } from '../lib/scroll'
+import { glideTo, gsap, ScrollTrigger } from '../lib/scroll'
 import { prefersReducedMotion } from '../lib/motion'
+import { sampleFrame } from '../lib/quality'
 import { airAt, daylight, formatClock, sunAt } from '../lib/solar'
 import { css, mixOklch, rgbUnit, type Oklch } from '../lib/color'
 import { FORMULAS, type Formula } from '../data/formulas'
@@ -304,12 +305,20 @@ export function initSweep(): Promise<void> {
   const state = { p: 0 }
 
   /**
-   * стрелки по обе стороны флакона. появляются только когда сцена стоит: во время прокрутки
-   * колесо занято днём, и лишние мишени под курсором сцене не нужны. без трёхмерного
-   * флакона их нет вовсе - менять было бы нечего
+   * стрелки по обе стороны флакона. стоят всё время, пока сцена приколота, и под каждой
+   * имя той формулы, к которой она ведёт. без трёхмерного флакона их нет вовсе - менять
+   * было бы нечего
    */
   const switcher = document.querySelector<HTMLElement>('[data-flacon-switch]')
   if (switcher && !flacon) switcher.remove()
+  const [prevName, nextName] = Array.from(
+    switcher?.querySelectorAll<HTMLElement>('[data-flacon-name]') ?? [],
+  )
+  const neighbours = (): void => {
+    const n = FORMULAS.length
+    if (prevName) prevName.textContent = FORMULAS[(index - 1 + n) % n].name
+    if (nextName) nextName.textContent = FORMULAS[(index + 1) % n].name
+  }
 
   let swapping = false
 
@@ -322,14 +331,20 @@ export function initSweep(): Promise<void> {
    * жест, а движение самого предмета, и трогается оно с нуля
    */
   function shift(step: number): void {
-    if (!flacon || swapping) return
-    const next = (index + step + FORMULAS.length) % FORMULAS.length
-    if (next === index) return
+    turn((index + step + FORMULAS.length) % FORMULAS.length, step)
+  }
+
+  function turn(next: number, step: number): void {
+    if (!flacon || swapping || next === index) return
     blend.from = FORMULAS[index]
     blend.to = FORMULAS[next]
     blend.m = 0
     index = next
+    neighbours()
     swapping = true
+    // сквозная сцена забирает флакон с плиты после полудня, и забрать она обязана ту
+    // формулу, которую на плите выбрали, а не ту, с которой пришли
+    document.dispatchEvent(new CustomEvent('meridian:formula', { detail: next }))
     gsap.to(blend, {
       m: 1,
       duration: SWAP_SECONDS,
@@ -353,13 +368,14 @@ export function initSweep(): Promise<void> {
 
   switcher?.querySelector('[data-flacon-prev]')?.addEventListener('click', () => shift(-1))
   switcher?.querySelector('[data-flacon-next]')?.addEventListener('click', () => shift(1))
+  neighbours()
 
   let awake = false
+  let hinted = false
   let lastTop = Number.NaN
   let lastEntrance = Number.NaN
   let lastProgress = Number.NaN
   let still = 0
-  let quiet = 0
   let shown = true
 
   /**
@@ -389,7 +405,6 @@ export function initSweep(): Promise<void> {
     const pinned = onScreen && Math.abs(top) < 1
     flacon.setReach(pinned)
 
-    const scrolled = Math.abs(top - lastTop) > 0.05 || state.p !== lastProgress
     lastTop = onScreen ? top : Number.NaN
     if (!onScreen && !force) return
 
@@ -398,22 +413,17 @@ export function initSweep(): Promise<void> {
     const entrance = clamp(1 - top / Math.max(fold, 1), 0, 1)
 
     /**
-     * покой считается двумя счётчиками, а не одним. quiet - про прокрутку: по нему выходят
-     * стрелки. still - про кадры, и в него входит и переключение, и парение под курсором.
-     * будь счётчик один, стрелки прятались бы ровно в тот момент, когда на флакон навели
-     * курсор.
-     *
-     * настой после остановки ещё качается на пружине, поэтому кадры идут не до
-     * первого совпадения, а полторы секунды после него
+     * still считает кадры покоя, и в него входит и переключение, и парение под курсором.
+     * настой после остановки ещё качается на пружине, поэтому кадры идут не до первого
+     * совпадения, а полторы секунды после него
      */
-    quiet = scrolled ? 0 : quiet + 1
     const changed = entrance !== lastEntrance || state.p !== lastProgress
     lastEntrance = entrance
     lastProgress = state.p
     const moved = force || changed || swapping || flacon.restless()
     still = moved ? 0 : still + 1
 
-    wake(pinned && quiet > 16)
+    wake(pinned)
 
     if (still > 90) return
 
@@ -423,6 +433,7 @@ export function initSweep(): Promise<void> {
     // загрузки приходит с разрывом в несколько секунд, и пружина настоя от него
     // расходится
     const dt = Math.min((now - lastFrame) / 1000, 1 / 30)
+    sampleFrame(now - lastFrame)
     lastFrame = now
     placeFlacon(flacon, source, paper, layout, hour, view, entrance, dt, top)
   }
@@ -444,6 +455,16 @@ export function initSweep(): Promise<void> {
     if (awake === on) return
     awake = on
     switcher.classList.toggle('is-awake', on)
+    /**
+     * в первый раз стрелки один раз качаются в свои стороны. это подсказка жестом, а не
+     * текстом: круги с именами формул уже говорят, что они делают, а движение говорит,
+     * что их можно трогать
+     */
+    if (on && !hinted) {
+      hinted = true
+      switcher.classList.add('is-hinting')
+      window.setTimeout(() => switcher.classList.remove('is-hinting'), 2400)
+    }
     // убранные стрелки не должны ловить ни табуляцию, ни экранный диктор
     switcher.inert = !on
   }
@@ -484,7 +505,7 @@ export function initSweep(): Promise<void> {
     return Promise.resolve()
   }
 
-  gsap.to(state, {
+  const day = gsap.to(state, {
     p: 1,
     ease: 'none',
     /**
@@ -507,6 +528,37 @@ export function initSweep(): Promise<void> {
   })
 
   render(0)
+
+  /**
+   * формулы из панели Index ведут сюда, в минуту среза выбранной формулы, а не к таблице.
+   * флакон поворачивается уже после прокрутки: на лету он садился бы на плиту, крутился и
+   * менял день разом, и ни одно из трёх движений не читалось бы. без флакона менять нечего,
+   * и ссылка остаётся простым якорем на сцену
+   */
+  if (flacon) {
+    document.addEventListener(
+      'click',
+      (event) => {
+        const link = (event.target as Element | null)?.closest?.<HTMLAnchorElement>('a[data-formula]')
+        const next = link ? FORMULAS.findIndex((f) => f.id === link.dataset.formula) : -1
+        const trigger = day.scrollTrigger
+        if (next < 0 || !trigger) return
+        event.preventDefault()
+        const own = viewOf(FORMULAS[next], FORMULAS[next], 1)
+        const p = (own.cut - own.from) / (own.to - own.from)
+        glideTo(trigger.start + p * (trigger.end - trigger.start), () => {
+          // короткой дорогой по кругу: из Cypress в Orris на шаг назад, а не на четыре вперёд
+          const ahead = (next - index + FORMULAS.length) % FORMULAS.length
+          turn(next, ahead <= FORMULAS.length / 2 ? 1 : -1)
+          section.setAttribute('tabindex', '-1')
+          section.focus({ preventScroll: true })
+        })
+      },
+      // раньше общего обработчика якорей: тот увёл бы на верх секции, в рассвет
+      { capture: true },
+    )
+  }
+
   /**
    * первый кадр флакона считается в посадке, а не там, где секция сейчас. цель у него не
    * картинка, а разовые расходы. три откладывает всё до первого попадания в кадр: буфер

@@ -1,4 +1,4 @@
-import { MeshDepthMaterial, RGBADepthPacking } from 'three'
+import { type LightShadow, MeshDepthMaterial, RGBADepthPacking } from 'three'
 
 /**
  * тень от стекла. карта теней в three знает только "закрыто" или "открыто", поэтому
@@ -51,4 +51,20 @@ export function createGlassShadow(density: number): MeshDepthMaterial {
 
   material.customProgramCacheKey = () => `meridian-glass-shadow-${density}`
   return material
+}
+
+/**
+ * карта теней вдвое меньше для слабого железа. размытие задано в текселях, поэтому и оно
+ * вдвое уже - в мире полутень остаётся той же ширины, и на глаз тень не меняется. саму
+ * карту three заведёт заново на следующем кадре
+ */
+export function halveShadow(shadow: LightShadow): void {
+  shadow.mapSize.multiplyScalar(0.5)
+  shadow.radius *= 0.5
+  shadow.blurSamples = Math.max(8, shadow.blurSamples / 2)
+  shadow.map?.depthTexture?.dispose()
+  shadow.map?.dispose()
+  shadow.map = null
+  shadow.mapPass?.dispose()
+  shadow.mapPass = null
 }

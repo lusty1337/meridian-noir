@@ -1,4 +1,4 @@
-import { MeshPhysicalMaterial, Vector2 } from 'three'
+import { Color, MeshPhysicalMaterial, Vector2 } from 'three'
 
 import { createTint, type FlaconTint } from './tint'
 
@@ -23,16 +23,47 @@ export type LiquidMotion = {
   update(dt: number, spin: number): void
 }
 
+/** больше слоёв, чем строк в самой длинной формуле, не бывает */
+export const STRATA_MAX = 8
+
+/**
+ * настой, разложенный на слои формулы. массивы в юниформах заведены у всех флаконов сразу,
+ * а включает их одно число mix: так у сцены полудня и у разобранного флакона одна и та же
+ * программа, и слои не стоят ни одной пересборки шейдера
+ */
+export type LiquidStrata = {
+  /** 0 - настой одним цветом, 1 - по слоям */
+  mix: { value: number }
+  /** верхняя граница каждого слоя в долях столба, по возрастанию */
+  edges: { value: number[] }
+  colors: { value: Color[] }
+  /**
+   * насколько каждый слой сейчас на коже, от нуля до единицы. доля, а не маска: строки
+   * "on skin" сменяют друг друга по прокрутке, и маска переключала бы цвета скачком
+   */
+  lit: { value: number[] }
+  /** насколько гаснут слои, которых сейчас нет на коже: 0 - все одинаково */
+  dim: { value: number }
+}
+
 export function createLiquid(
   fillLevel: number,
   tint: FlaconTint = createTint(),
 ): {
   material: MeshPhysicalMaterial
   motion: LiquidMotion
+  strata: LiquidStrata
 } {
   const tilt = { value: new Vector2() }
   const ripple = { value: 0 }
   const time = { value: 0 }
+  const strata: LiquidStrata = {
+    mix: { value: 0 },
+    edges: { value: Array.from({ length: STRATA_MAX }, () => 1) },
+    colors: { value: Array.from({ length: STRATA_MAX }, () => new Color()) },
+    lit: { value: Array.from({ length: STRATA_MAX }, () => 0) },
+    dim: { value: 0 },
+  }
 
   const material = new MeshPhysicalMaterial({
     metalness: 0,
@@ -94,6 +125,11 @@ export function createLiquid(
 
     // глубина цвета по высоте столба: у дна слой толще, и света доходит меньше
     shader.uniforms.uDeep = { value: tint.deep }
+    shader.uniforms.uStrataMix = strata.mix
+    shader.uniforms.uStrataEdge = strata.edges
+    shader.uniforms.uStrataColor = strata.colors
+    shader.uniforms.uStrataLit = strata.lit
+    shader.uniforms.uStrataDim = strata.dim
     shader.fragmentShader = shader.fragmentShader
       .replace(
         '#include <common>',
@@ -101,6 +137,11 @@ export function createLiquid(
         #include <common>
         uniform vec3 uDeep;
         uniform float uFill;
+        uniform float uStrataMix;
+        uniform float uStrataEdge[ ${STRATA_MAX} ];
+        uniform vec3 uStrataColor[ ${STRATA_MAX} ];
+        uniform float uStrataLit[ ${STRATA_MAX} ];
+        uniform float uStrataDim;
         varying vec3 vLocal;
       `,
       )
@@ -109,6 +150,29 @@ export function createLiquid(
         /* glsl */ `
         #include <color_fragment>
         diffuseColor.rgb = mix( uDeep, diffuseColor.rgb, smoothstep( 0.0, uFill, vLocal.y ) );
+
+        // высота берётся из позиции до матрицы модели: столб сжимают масштабом, когда
+        // формулу наливают, а слои обязаны делить его на доли, как бы низко он ни стоял
+        float column = clamp( ( vLocal.y - 0.03 ) / ( uFill - 0.03 ), 0.0, 1.0 );
+        vec3 layer = uStrataColor[ ${STRATA_MAX - 1} ];
+        float lit = uStrataLit[ ${STRATA_MAX - 1} ];
+        float below = 0.0;
+        float above = 1.0;
+        for ( int i = 0; i < ${STRATA_MAX}; i ++ ) {
+          if ( column <= uStrataEdge[ i ] ) {
+            layer = uStrataColor[ i ];
+            lit = uStrataLit[ i ];
+            above = uStrataEdge[ i ];
+            break;
+          }
+          below = uStrataEdge[ i ];
+        }
+        // тонкая тёмная черта по стыку: без неё соседние слои близкого цвета
+        // сливаются, и видно пятна, а не разлив по долям
+        float seam = min( column - below, above - column );
+        layer *= mix( 0.62, 1.0, smoothstep( 0.0, 0.012, seam ) );
+        layer = mix( layer, uDeep, 0.6 * uStrataDim * ( 1.0 - lit ) );
+        diffuseColor.rgb = mix( diffuseColor.rgb, layer, uStrataMix );
       `,
       )
   }
@@ -154,7 +218,7 @@ export function createLiquid(
     },
   }
 
-  return { material, motion }
+  return { material, motion, strata }
 }
 
 function clamp(v: number, lo: number, hi: number): number {

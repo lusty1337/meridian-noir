@@ -38,14 +38,6 @@
     U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-/* цвет меридиана регистрируется как свойство, иначе его нечем анимировать:
-   он живёт внутри градиента, а невыясненная переменная переключается скачком */
-@property --hair-madder {
-  syntax: '<color>';
-  inherits: true;
-  initial-value: rgb(197 35 39 / 0.45);
-}
-
 :root {
   color-scheme: light;
 
@@ -72,6 +64,8 @@
   --hair-chalk: oklch(0.905 0.012 232 / 0.2);
   --hair-chalk-strong: oklch(0.905 0.012 232 / 0.45);
   --hair-madder: oklch(0.532 0.196 26 / 0.45);
+  /* та же марена для тёмного поля: на индиго исходная почти не читается */
+  --hair-madder-lit: oklch(0.7 0.165 32 / 0.55);
 
   --font-display: 'Newsreader', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
   --font-text: 'Schibsted Grotesk', 'Helvetica Neue', Arial, sans-serif;
@@ -102,7 +96,8 @@
      ровно столько, сколько её читают. по таблице длительностей UI это был бы фейл */
   --dur-reveal: 900ms;
 
-  --z-meridian: 30;
+  /* ниже холста с флаконами: линия нарисована на странице, а флакон стоит перед ней */
+  --z-meridian: 15;
   --z-grain: 35;
   --z-toggle: 50;
   --z-panel: 60;

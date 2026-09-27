@@ -37,5 +37,7 @@ export function initLetter(): void {
 
     say(`Noted. ${value} goes on the list — this is a demonstration, so nothing is sent.`, true)
     form.reset()
+    // флакон рядом с формой отвечает на письмо: крышку снимают и сажают на место
+    document.dispatchEvent(new CustomEvent('meridian:letter'))
   })
 }

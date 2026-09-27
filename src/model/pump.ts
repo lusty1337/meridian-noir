@@ -7,7 +7,7 @@ import {
 } from 'three'
 
 import type { FlaconTint } from './tint'
-import { FLACON, type FlaconOptions } from './flacon'
+import { arcTolerance, FLACON, type FlaconOptions } from './flacon'
 import { loftNormals, roundCorners, type Vec2, type Vec3 } from './shape'
 
 /**
@@ -262,6 +262,7 @@ function revolve(
     profile.map(([r, y]) => ({ x: r * options.halfWidth, y: y * options.height })),
     profile.map(([, , radius]) => radius * options.height),
     4,
+    arcTolerance(profile, options.height),
   )
 
   const rings: Vec2[] = []
@@ -283,43 +284,54 @@ function revolve(
   )
   const normals = loftNormals(loops)
 
+  // вершина кольца общая для четырёх квадратов вокруг, как и у корпуса: нормаль у неё одна
   const positions: number[] = []
   const normalOut: number[] = []
+  loops.forEach((loop, i) => loop.forEach((p, k) => push(positions, normalOut, p, normals[i][k])))
 
+  const index: number[] = []
   for (let i = 0; i < loops.length - 1; i += 1) {
     for (let k = 0; k < segments; k += 1) {
       const k2 = (k + 1) % segments
-      push(positions, normalOut, loops[i][k], normals[i][k])
-      push(positions, normalOut, loops[i + 1][k], normals[i + 1][k])
-      push(positions, normalOut, loops[i + 1][k2], normals[i + 1][k2])
-      push(positions, normalOut, loops[i][k], normals[i][k])
-      push(positions, normalOut, loops[i + 1][k2], normals[i + 1][k2])
-      push(positions, normalOut, loops[i][k2], normals[i][k2])
+      const a = i * segments + k
+      const b = (i + 1) * segments + k
+      const c = (i + 1) * segments + k2
+      const d = i * segments + k2
+      index.push(a, b, c, a, c, d)
     }
   }
 
-  fan(positions, normalOut, loops[0], { x: 0, y: -1, z: 0 }, false)
-  fan(positions, normalOut, loops[loops.length - 1], { x: 0, y: 1, z: 0 }, true)
+  fan(positions, normalOut, index, loops[0], { x: 0, y: -1, z: 0 }, false)
+  fan(positions, normalOut, index, loops[loops.length - 1], { x: 0, y: 1, z: 0 }, true)
 
   const geometry = new BufferGeometry()
   geometry.setAttribute('position', new BufferAttribute(new Float32Array(positions), 3))
   geometry.setAttribute('normal', new BufferAttribute(new Float32Array(normalOut), 3))
+  geometry.setIndex(index)
   geometry.computeBoundingSphere()
   return geometry
 }
 
-function fan(pos: number[], nor: number[], ring: Vec3[], axis: Vec3, flip: boolean): void {
-  const centre: Vec3 = { x: 0, y: ring[0].y, z: 0 }
+/**
+ * торцы помпы плоские, и нормаль по их ободу осевая, а не кольцевая - на этом держится
+ * ступенька. поэтому у торца свои вершины обода, а не общие со стенкой
+ */
+function fan(
+  pos: number[],
+  nor: number[],
+  index: number[],
+  ring: Vec3[],
+  axis: Vec3,
+  flip: boolean,
+): void {
+  const centre = pos.length / 3
+  push(pos, nor, { x: 0, y: ring[0].y, z: 0 }, axis)
+  for (const p of ring) push(pos, nor, p, axis)
   for (let k = 0; k < ring.length; k += 1) {
-    const k2 = (k + 1) % ring.length
-    push(pos, nor, centre, axis)
-    if (flip) {
-      push(pos, nor, ring[k2], axis)
-      push(pos, nor, ring[k], axis)
-    } else {
-      push(pos, nor, ring[k], axis)
-      push(pos, nor, ring[k2], axis)
-    }
+    const a = centre + 1 + k
+    const b = centre + 1 + ((k + 1) % ring.length)
+    if (flip) index.push(centre, b, a)
+    else index.push(centre, a, b)
   }
 }
 

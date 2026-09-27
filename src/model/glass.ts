@@ -1,5 +1,6 @@
 import { MeshPhysicalMaterial, MeshStandardMaterial, ShaderChunk } from 'three'
 
+import { onLowPower } from '../lib/quality'
 import { createTint, type FlaconTint } from './tint'
 
 /**
@@ -91,6 +92,7 @@ function gradeByHeight(
     // градиент сжат в полосу над линией налива: ниже её стекло закрыто настоем,
     // и растянутый на всю высоту переход попросту не виден
     shader.uniforms.uFrom = { value: band[0] }
+    shader.uniforms.uSoftTaps = softTaps
     shader.uniforms.uTo = { value: band[1] }
 
     shader.vertexShader = shader.vertexShader
@@ -139,6 +141,7 @@ function gradeByHeight(
     )
 
     shader.fragmentShader = shader.fragmentShader
+      .replace('#include <transmission_pars_fragment>', softSample())
       .replace(
         '#include <common>',
         /* glsl */ `
@@ -157,6 +160,48 @@ function gradeByHeight(
   // без этого three переиспользует скомпилированную программу другого материала
   // с теми же настройками и патч не попадает в шейдер
   material.customProgramCacheKey = () => 'meridian-glass'
+}
+
+/**
+ * фрост берёт картинку за стеклом не с одного уровня мипмапа, а диском с уровня мельче.
+ * three читает уровень, где точка буфера - шестнадцать точек экрана, и сплайн по такой
+ * сетке ведёт наклонную кромку волной с её шагом: зеркало настоя за стеклом шло
+ * лесенкой, и она ползла, когда флакон поворачивался. диск из 24 выборок даёт то же
+ * размытие, а сетка под ним вдвое мельче и между выборками уже не видна.
+ * вес по гауссу, чтобы край размытия не читался кольцом.
+ *
+ * на слабом железе выборок вдвое меньше, а уровень берётся на полшага грубее: выборки
+ * реже, и чтобы между ними не проступали двойники, каждая сама чуть мягче
+ */
+const SOFT_TAPS = 24
+const softTaps = { value: SOFT_TAPS }
+onLowPower(() => (softTaps.value = SOFT_TAPS / 2))
+
+function softSample(): string {
+  const line = 'return textureBicubic( transmissionSamplerMap, fragCoord.xy, lod );'
+  const chunk = ShaderChunk.transmission_pars_fragment
+  if (!chunk.includes(line)) {
+    console.warn('glass: three сменил выборку просвета, мягкий фрост не применён')
+    return chunk
+  }
+  return `uniform float uSoftTaps;\n${chunk}`.replace(
+    line,
+    /* glsl */ `
+      float fine = max( lod - 12.0 / uSoftTaps, 0.0 );
+      vec2 reach = 1.45 * exp2( lod ) / transmissionSamplerSize;
+      vec4 sum = textureLod( transmissionSamplerMap, fragCoord.xy, fine );
+      float total = 1.0;
+      for ( int i = 0; i < ${SOFT_TAPS}; i ++ ) {
+        if ( float( i ) >= uSoftTaps ) break;
+        float r = sqrt( ( float( i ) + 0.5 ) / uSoftTaps );
+        float a = float( i ) * 2.39996323;
+        float w = exp( -2.0 * r * r );
+        sum += w * textureLod( transmissionSamplerMap, fragCoord.xy + vec2( cos( a ), sin( a ) ) * r * reach, fine );
+        total += w;
+      }
+      return sum / total;
+    `,
+  )
 }
 
 /**

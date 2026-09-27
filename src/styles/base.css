@@ -22,6 +22,8 @@ html:not(.js) {
 }
 
 body {
+  /* от body меряется меридиан: он идёт по всей длине страницы, а не по окну */
+  position: relative;
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-text);
@@ -216,17 +218,17 @@ p {
   }
 }
 
+/* меридиан прочерчен по самой странице, от первой строки до подписи, и уходит вместе с
+   ней, как линия на бумаге. цвет у него полосами по секциям: где под ним тёмное поле,
+   там светлая марена. полосы пишет скрипт - высоты секций в css не узнать */
 .meridian {
-  position: fixed;
+  position: absolute;
   inset-block: 0;
   left: var(--meridian);
   width: 1px;
   z-index: var(--z-meridian);
-  background: var(--hair-madder);
+  background: var(--meridian-paint, var(--hair-madder));
   pointer-events: none;
-  /* 480 мс, а не 200: это не отклик на действие, а смена освещения под линией.
-     на быстрой смене возвращается ровно тот щелчок, ради которого всё затевалось */
-  transition: --hair-madder 480ms var(--ease-out-quart);
 }
 
 .meridian__ticks {
@@ -234,17 +236,8 @@ p {
   inset-block: 0;
   left: -3px;
   width: 7px;
-  background: repeating-linear-gradient(
-    to bottom,
-    var(--hair-madder) 0 1px,
-    transparent 1px 46px
-  );
-}
-
-/* пока в кадре тёмная секция, марена на ней почти не читается - осветляем линию и кнопку */
-.is-inverted .meridian,
-.is-inverted .meridian__ticks {
-  --hair-madder: oklch(0.7 0.165 32 / 0.55);
+  background: var(--meridian-paint, var(--hair-madder));
+  mask-image: repeating-linear-gradient(to bottom, #000 0 1px, transparent 1px 46px);
 }
 
 .grain {
@@ -344,8 +337,47 @@ p {
   }
 }
 
-/* на узком экране контент прижат к левому краю, и кнопка внизу слева легла бы
-   ровно на текст - на мобильном она уходит в правый верхний угол */
+/* на широком экране кнопка - закладка в левом поле. поле пусто на всей странице, текст
+   начинается за ним, и закладку ничто не накрывает и сама она ничего не накрывает. в строке
+   текста кнопка ложилась на таблицу указателя и на подпись подвала: закреплённое на экране
+   не должно заслонять содержимое. читается снизу вверх, как корешок книги на полке */
+@media (min-width: 901px) {
+  .index-toggle {
+    --rail: 28px;
+    left: calc((var(--edge) - var(--rail)) / 2);
+    width: var(--rail);
+    padding: 16px 0;
+    justify-content: center;
+    writing-mode: vertical-rl;
+    rotate: 180deg;
+    font-size: var(--fs-micro);
+  }
+
+  /* черта встаёт вдоль закладки, а не поперёк неё */
+  .index-toggle__rule {
+    width: 1px;
+    height: 18px;
+    transform-origin: center;
+  }
+
+  /* разрядка встаёт и после последней буквы - в колонке это лишнее поле сверху */
+  .index-toggle__label {
+    margin: 0 0 -0.2em;
+  }
+}
+
+@media (min-width: 901px) and (hover: hover) and (pointer: fine) {
+  .index-toggle:hover .index-toggle__rule {
+    translate: none;
+    scale: 1 1.6;
+  }
+
+  .index-toggle:hover .index-toggle__label {
+    translate: none;
+  }
+}
+
+/* на узком экране поля нет, контент прижат к краю - там кнопка уходит в правый верхний угол */
 @media (max-width: 900px) {
   .index-toggle {
     left: auto;
@@ -522,6 +554,12 @@ p {
   color: var(--ink-soft);
 }
 
+.colophon__text {
+  display: grid;
+  gap: 0.4rem;
+  align-content: center;
+}
+
 .colophon .wordmark {
   color: var(--ink);
   margin-bottom: 0.6rem;
@@ -533,4 +571,26 @@ p {
   font-family: var(--font-display);
   font-style: italic;
   font-size: 0.95rem;
+}
+
+.colophon__credit {
+  margin-top: 0.6rem;
+}
+
+.colophon__credit a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--hair-strong);
+  text-underline-offset: 0.22em;
+  transition:
+    color var(--dur-hover) ease,
+    text-decoration-color var(--dur-hover) ease;
+}
+
+@media (hover: hover) {
+  .colophon__credit a:hover {
+    color: var(--madder-deep);
+    text-decoration-color: currentColor;
+  }
 }
