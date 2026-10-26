@@ -1,3 +1,246 @@
+**English** · [Русский](#ru)
+
+# MERIDIAN NOIR — a perfume house website
+
+A single-page site for a fictional perfume house from Marseille, directed by scroll
+like a film. The house has five fragrances, and each is tied to one place, one day and one minute
+of harvesting the raw material — in true solar time.
+
+At the center of the page is a working sundial. The bottle stands on a marked slab as the gnomon,
+scrolling carries the sun from sunrise to sunset, and the shadow falls exactly on the hour line
+it would fall on that day at that latitude. The brand, formulas and prices are made up. The astronomy isn't.
+
+Live version: **https://egordev.com/meridian-noir/**
+
+## Running
+
+```bash
+npm install
+npm run dev
+```
+
+| command | what it does |
+|---|---|
+| `npm run dev` | Vite dev server on `:5173` |
+| `npm run build` | type check and production build into `dist/` |
+| `npm run preview` | the finished build on `:4173` |
+| `npm run preview:lan` | the same, but reachable from a phone on the same network |
+| `npm run typecheck` | `tsc --noEmit` |
+
+## The rule everything grew from
+
+**Not a single image file.** No photos, no video, no textures, no HDRI, no `.glb`.
+Everything on the page is typography, CSS, SVG, canvas and geometry the code builds
+on load. The 3D bottle isn't modeled either — it's written.
+
+It started as a constraint and became the project's best feature: you can look at the page
+as closely as you like, nothing in it can go stale or return a 404, and the assets weigh exactly two fonts.
+
+The one exception is `public/og.jpg`, the link preview for social networks and messengers.
+The page never shows it: crawlers can't render WebGL, so they have to be handed a snapshot
+of the scene ready-made.
+
+## Stack
+
+Vite and TypeScript, no framework. GSAP ScrollTrigger and Lenis for scrolling, three.js for the bottle.
+A framework wouldn't have added anything here: there's one page, almost no state, and all the interesting work
+lives in the scroll timeline and in geometry — both easier to direct with plain code.
+
+The fonts are self-hosted, not from a CDN: **Newsreader** and **Schibsted Grotesk**, both under the SIL Open Font License.
+
+## The sundial — a calculation, not an animation
+
+`src/lib/solar.ts` is a pure function with no rendering. The sun's altitude above the horizon and its azimuth
+are computed from declination and hour angle:
+
+```
+sin h = sin φ · sin δ + cos φ · cos δ · cos H
+```
+
+where φ is latitude, δ is the sun's declination on that day, H is the hour angle (15° per hour from noon).
+Shadow length is the cotangent of altitude, in gnomon heights. The hour lines on the slab sit where
+the shadow would really fall; the dashed line is the curve the tip of the shadow traces over the day.
+
+- **Five sites — five different days.** Latitude and declination come from the formula, and everything else
+  follows: the sun's arc rises or flattens, the day grows longer or shorter,
+  the fan of hour lines opens wider or narrower.
+- **Southern hemisphere.** Three of the five sites are south of the equator, and there the viewer stands on the other
+  side of the gnomon. The azimuth is rotated by 180° — not mirrored — and the hours on the dial
+  start running counterclockwise on their own, as on real southern sundials.
+- **The sky is normalized to the sun's altitude, not to local noon.** Otherwise January in Ohara
+  would look like August in Marseille.
+- **The transition between formulas** blends latitude, declination, harvest minute and air proportionally,
+  and the glass color in Oklab. The day doesn't switch — it flows into another.
+
+## A bottle written in code
+
+- **The body is a loft.** A faceted cross-section with chamfers swept along a profile. The corner rounding
+  is Blender's bevel, written in two dimensions. Normals come from the surface itself
+  (tangent along the ring × tangent along the profile), not from an angle threshold: this way the chamfers
+  catch a narrow highlight like real glass does, and there's no seam anywhere.
+- **Cap, collar, pump, dip tube.** The cap follows the body's cross-section, the pump is a solid of revolution
+  with proportions taken from a reference, the tube leans toward the deepest point of the bottom.
+- **Glass.** `MeshPhysicalMaterial` with transmission and roughness; color is Beer–Lambert
+  absorption. The gradient from madder to indigo and a wall thickness that depends on the viewing angle
+  are patched into `ShaderChunk` — three only has a single constant per material for this.
+- **Frost without staircases.** three blurs what's behind the glass with a single mip level, where one
+  buffer pixel is sixteen screen pixels, and the slanted edge of the liquid behind the glass followed
+  that grid in a wave. Here the lookup is replaced by a 24-tap disk from a level twice as fine,
+  with Gaussian weights: the same blur, but the grid is gone.
+- **The liquid** is opaque on purpose: transparent liquid inside transparent glass disappears from
+  the transmission buffer. The surface sloshes on a spring driven by angular *acceleration*: during a steady
+  turn it stays still, and it splashes when rotation starts and stops. The meniscus rises only at the
+  wall; the surface itself is flat and split into rings — the ripple is computed per vertex.
+- **The label** is a canvas texture in the same fonts as the page, with mipmaps.
+- **The studio** is a gradient sphere and glowing panels, run once through
+  `PMREMGenerator`. A room for reflections without a single `.hdr`.
+- **The glass shadow.** A shadow map only knows "blocked" and "open", so the glass discards
+  some fragments in the depth pass using an ordered dither matrix, and VSM blurs that into an even
+  penumbra. The near and far planes are fitted tightly to the slab — otherwise half precision isn't enough
+  and the slab gets covered in a grid pattern.
+
+## The peak scene
+
+- **The browser holds the pin.** The scene sits on `position: sticky`: switching to `fixed` from
+  the main thread arrives on a phone one frame after the scroll.
+- **Two canvases inside the scene.** The shadow gets a full-frame canvas at screen density. The bottle gets a small
+  canvas fitted to its bounds, at twice screen density: that's where the edges, the lettering and the transmission are, and nowhere
+  else. Both canvases move with the slab on their own, with no script: while the sun stands still,
+  the peak scene doesn't draw a single WebGL frame.
+- **A backdrop for the glass.** A piece of the 2D slab under the bottle is copied into a texture and
+  hangs behind it, so the glass refracts the real shadow and not empty space.
+- **Arrival within one screen.** The bottle comes out from behind the top edge of the window exactly when the
+  section appears at the bottom, and lands on the slab as the slab arrives. The curve is smootherstep:
+  zero velocity and acceleration at both ends.
+- **Five formulas on one slab.** The arrows on the sides are visible while the scene is pinned, with the
+  names of the neighbouring formulas under them; on first show they swing once toward their sides;
+  from the keyboard — ← and →. The bottle makes a full turn, the label changes on the far side, and the day changes with it.
+  The bottle stays the same — four colors and one line of text change.
+- **Formulas in the Index menu** lead into the scene, not to the table: the scroll stops exactly on
+  the harvest minute of the chosen formula, and only then does the bottle turn to it by the short
+  way round.
+- **The bottle in your hands.** Under the cursor it lifts, floats on three incommensurate sines
+  and turns away from the cursor. Everything runs on critically damped springs, so any
+  interruption is seamless. On a phone your finger spins the model, all listeners are passive, and
+  vertical scrolling isn't hijacked by a single millimeter.
+- **Layout around the text.** On a phone the day's text is measured by its longest line
+  across all formulas, and the scene is built above it. Shadows and the dashed line fade out at the edge with a mask instead of
+  being cropped.
+- **The preloader** doesn't wait for the network — there's nothing to wait for. It waits for work: fonts, shader
+  compilation and one frame of the bottle "after landing", which pays in advance for the transmission buffer and the shadow map.
+
+## The through-scene
+
+The bottle doesn't live in one section — it's the lead of the whole page. One transparent canvas
+with a long-lens camera lies over the layout, and the bottle moves from act to act without
+vanishing and reappearing.
+
+- **The layout holds the bottle's places.** The markup has empty blocks — by the hero, the index,
+  the formula bench, the shutters, the prices, the footer. The canvas lies over the text, and the text
+  doesn't run into the bottle not because it's hidden, but because the space under the bottle is
+  empty at any width.
+- **The director is a pure function of scroll.** Acts are counted from their own sections, not from
+  page percentages. Between neighbours the whole frame blends: place, angle, light, glass colour,
+  how many bottles are drawn.
+- **Acts.** Intro — the bottle is drawn in madder and the glass grows along the drawing. Noon — the
+  bottle in the column by the window. Index — five formulas line up, and the bottle of the row under
+  the cursor lifts. On a wide screen the formula bench pins whole for a screen and a half of scroll:
+  the bottle is taken apart, the layers pour one by one, the current layer's row answers with its
+  figure, then the bottle is reassembled and carried in an arc to "on skin" — to where its place
+  will be by the end of the carry. On a phone the bench is a full-window scene: the bottle on top,
+  one row at a time below it, and scrolling swaps the rows in place while their layer pours.
+  "On skin" lights up the layers that are sounding on the skin right now. Then the bottle leaves past
+  the top of the window and descends onto the noon slab from above — the same object, handed over
+  through the edge. Then the shutter room, three volumes by the prices (scale is the cube root of the
+  volume) and dusk in the footer, where the shadow stretches toward the signature.
+- **Layers are a shader, not meshes.** The liquid is cut into fractions along the column height, each
+  joint darkened by a thin line, and the "on skin" highlight is a bitmask. All bottles share one
+  program, and the layers cost not a single recompile.
+- **One geometry for all eight bottles**, indexed: about 10k triangles and 5k vertices per bottle.
+  Profile roundings are subdivided to a quarter-pixel tolerance at the largest close-up, and the
+  cap's flat faces aren't subdivided at all.
+- **Places are computed by projection.** The bottle is set in the middle of its place by what's
+  visible on screen with tilt and turn — so the margins around it are equal on all four sides.
+- **Shot size is distance, not scale.** three computes the ray path through glass with the model's
+  scale, and an enlarged bottle would thicken into blue plastic.
+- **The glass backdrop** — the colour of the section under the bottle, read through a canvas:
+  the browser returns the background in oklch, and parsing the string as rgb gave a bright blue wall.
+- **Phone** — the same direction in portrait. The formula bench and the prices pin: the bottle in the
+  top of the window, one row under it, and when the row changes, the bottles by the prices change
+  formula. Text never passes under the glass.
+- **The meridian is drawn along the page**, not the window: over a dark field it's lighter, on the
+  noon slab it goes behind the bottle, and the shutter light and the bottles' shadows end before
+  reaching it.
+- A frame is drawn in the same tick as the scroll, and only if something in it moved. The canvas lies
+  in the page itself, with margin above and below the window: on a phone the browser moves the page
+  in its own thread, and the canvas travels with the text even when a frame is late. While the
+  bottle's place is stuck to the window, the canvas holds on to the window.
+
+## Scrolling and reveals
+
+Lenis and ScrollTrigger. Each reveal is tied to its own element, not to the section, and
+replays every time it comes back into view — in both directions and as many times as you like.
+
+## When something is missing
+
+- **Weak hardware** is recognised by its frames: if the median drawing frame is longer than 25 ms,
+  the shadow map halves at the same penumbra width, and the frost gets half as many taps. Canvas
+  density is never touched — the bottle doesn't pixelate.
+- **WebGL context loss.** A phone takes it from a tab in the background. three rebuilds its buffers
+  itself, and the scenes reshoot the reflection room — otherwise the glass would come back black.
+- **Without JavaScript** the whole page is still readable, and the peak scene turns into a text
+  transcript of the day with all the numbers.
+- **`prefers-reduced-motion`** gets a different cut of the same film: no Lenis, no pin and no
+  through-scene, the peak draws one frame at the harvest minute, reveals become short fade-ins.
+- **Narrow screens** — the meridian moves to the left edge, tables rebuild into labeled
+  rows, the Index button moves from the bookmark in the left margin to the top right corner.
+- **Screen notch.** `viewport-fit=cover`: the page is drawn all the way to the top of the phone, while
+  text, buttons and the sun sit below the Dynamic Island.
+
+## Accessibility
+
+Contrast is chosen by the numbers: body text is 13:1 on paper and 10.8:1 on the dark field; the madder
+accent exists in three lightness levels to hold 4.5:1 on any surface. The Index panel is a
+native `<dialog>`, tables are real tables with `scope` and tabular figures, and every
+control has a visible focus.
+
+## Lab
+
+`/lab/bottle.html` is the model-building page: orbit, wireframe, normals, fixed camera angles.
+The site doesn't link to it, and it's closed to indexing.
+
+## Source layout
+
+```
+index.html             all the page text and the static SVG
+src/
+  main.ts              load order
+  data/formulas.ts     five formulas: coordinates, days, colors, day lines
+  lib/                 scrolling, reveals, parallax, sun, color, preloader
+  model/               the bottle: geometry, glass, liquid, pump, label, studio
+  scenes/              page scenes, the sundial and the bottle's 3D scene
+  cinema/              the through-scene: actor, stage, director
+  styles/              tokens, base, scenes
+  lab/                 the model lab
+```
+
+## Deployment
+
+GitHub Pages via Actions: `.github/workflows/deploy.yml` builds the project with
+`--base=/meridian-noir/` and publishes `dist/` on every push to `main`.
+
+## License
+
+[All Rights Reserved](LICENSE) — the code, 3D geometry and design are protected by copyright.
+Copying, modification and use without written permission are prohibited.
+Fonts are distributed under SIL OFL 1.1, third-party libraries under their own licenses.
+
+---
+
+<a name="ru"></a>
+
+[English](#readme) · **Русский**
+
 # MERIDIAN NOIR — сайт парфюмерного дома
 
 Одностраничный сайт вымышленного парфюмерного дома из Марселя, срежиссированный прокруткой
